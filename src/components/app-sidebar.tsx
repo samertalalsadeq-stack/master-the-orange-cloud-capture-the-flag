@@ -82,7 +82,7 @@ export function AppSidebar(): JSX.Element {
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(243,128,32,0.4)]">
             <Shield className="h-5 w-5 text-white" />
           </div>
-          <span className="font-display font-bold text-lg tracking-tight text-white">Orange CTF</span>
+          <span className="font-display font-bold text-lg tracking-tight text-white uppercase italic">Menu</span>
         </div>
       </SidebarHeader>
       <SidebarContent className="px-4">
