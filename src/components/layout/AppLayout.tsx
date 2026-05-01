@@ -1,18 +1,24 @@
 /*
-Wraps children in a sidebar layout. Don't use this if you don't need a sidebar
+Wraps children in a sidebar layout. Protects the route by checking for an authenticated session.
 */
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-
 type AppLayoutProps = {
   children: React.ReactNode;
   container?: boolean;
   className?: string;
   contentClassName?: string;
 };
-
 export function AppLayout({ children, container = false, className, contentClassName }: AppLayoutProps): JSX.Element {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const savedUser = localStorage.getItem('ctf_user');
+    if (!savedUser) {
+      navigate('/');
+    }
+  }, [navigate]);
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Unlock, Trophy, Shield, Zap, Globe, Lock } from 'lucide-react';
@@ -17,39 +17,61 @@ export function ChallengesPage() {
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [flag, setFlag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const savedUser = JSON.parse(localStorage.getItem('ctf_user') || '{}') as CTFUser;
+  const currentUser = useMemo(() => {
+    try {
+      const stored = localStorage.getItem('ctf_user');
+      if (!stored) return null;
+      const parsed = JSON.parse(stored) as CTFUser;
+      return {
+        ...parsed,
+        solvedChallenges: parsed.solvedChallenges ?? [],
+        score: parsed.score ?? 0
+      };
+    } catch (e) {
+      console.error("Failed to parse user session", e);
+      return null;
+    }
+  }, []);
   const { data: challenges, isLoading } = useQuery<Challenge[]>({
     queryKey: ['challenges'],
     queryFn: () => api<Challenge[]>('/api/challenges'),
   });
   const submitMutation = useMutation({
-    mutationFn: (data: { challengeId: string; flag: string }) =>
-      api<SubmissionResponse>('/api/challenges/submit', {
+    mutationFn: (data: { challengeId: string; flag: string }) => {
+      if (!currentUser?.id) throw new Error("No authenticated user session");
+      return api<SubmissionResponse>('/api/challenges/submit', {
         method: 'POST',
-        body: JSON.stringify({ userId: savedUser.id, ...data })
-      }),
+        body: JSON.stringify({ userId: currentUser.id, ...data })
+      });
+    },
     onSuccess: (data) => {
-      if (data.correct) {
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#F38020', '#FFFFFF', '#1E1E1E'] });
+      if (data.correct && selectedChallenge && currentUser) {
+        confetti({ 
+          particleCount: 150, 
+          spread: 80, 
+          origin: { y: 0.6 }, 
+          colors: ['#F38020', '#FFFFFF', '#1E1E1E'] 
+        });
         toast.success(data.message);
-        const updated = { 
-          ...savedUser, 
-          score: data.newScore || savedUser.score, 
-          solvedChallenges: [...savedUser.solvedChallenges, selectedChallenge?.id || ''] 
+        const updatedUser: CTFUser = {
+          ...currentUser,
+          score: data.newScore ?? currentUser.score,
+          solvedChallenges: [...new Set([...currentUser.solvedChallenges, selectedChallenge.id])]
         };
-        localStorage.setItem('ctf_user', JSON.stringify(updated));
+        localStorage.setItem('ctf_user', JSON.stringify(updatedUser));
         queryClient.invalidateQueries({ queryKey: ['challenges'] });
         setSelectedChallenge(null);
+        setFlag('');
       } else {
-        toast.error(data.message);
+        toast.error(data.message || "Submission rejected");
       }
     },
-    onError: () => toast.error("Communication error with the mainframe."),
+    onError: (err: any) => toast.error(err.message || "Communication error with the mainframe."),
     onSettled: () => setIsSubmitting(false)
   });
   const handleFlagSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!flag.trim() || !selectedChallenge) return;
+    if (!flag.trim() || !selectedChallenge || isSubmitting) return;
     setIsSubmitting(true);
     submitMutation.mutate({ challengeId: selectedChallenge.id, flag: flag.trim() });
   };
@@ -62,6 +84,7 @@ export function ChallengesPage() {
     }
   };
   if (isLoading) return <div className="flex items-center justify-center h-96 text-primary font-mono animate-pulse">SCANNING SECTORS...</div>;
+  if (!currentUser) return <div className="flex items-center justify-center h-96 text-destructive font-mono">UNAUTHORIZED: SESSION EXPIRED</div>;
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -72,15 +95,15 @@ export function ChallengesPage() {
         <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(243,128,32,0.1)]">
           <Trophy className="size-6 text-primary" />
           <div className="font-mono">
-            <div className="text-xs text-white/40 uppercase tracking-widest">Global Rank</div>
-            <div className="text-2xl font-bold text-white">{savedUser.score} <span className="text-sm text-white/40 ml-1">PTS</span></div>
+            <div className="text-xs text-white/40 uppercase tracking-widest">Global Score</div>
+            <div className="text-2xl font-bold text-white">{currentUser.score} <span className="text-sm text-white/40 ml-1">PTS</span></div>
           </div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
           {challenges?.map((ch) => {
-            const isSolved = savedUser.solvedChallenges?.includes(ch.id);
+            const isSolved = currentUser.solvedChallenges.includes(ch.id);
             return (
               <motion.div
                 key={ch.id}
@@ -117,8 +140,8 @@ export function ChallengesPage() {
                       onClick={() => { setSelectedChallenge(ch); setFlag(''); }}
                       className={cn(
                         "w-full font-bold transition-all",
-                        isSolved 
-                          ? "bg-white/5 text-white/40 hover:bg-white/10 border border-white/5" 
+                        isSolved
+                          ? "bg-white/5 text-white/40 hover:bg-white/10 border border-white/5"
                           : "bg-primary text-white shadow-[0_0_15px_rgba(243,128,32,0.3)] hover:shadow-[0_0_25px_rgba(243,128,32,0.5)]"
                       )}
                     >
@@ -153,11 +176,11 @@ export function ChallengesPage() {
                 onChange={(e) => setFlag(e.target.value)}
                 placeholder="CF{...}"
                 className="bg-white/5 border-white/10 h-14 text-lg font-mono tracking-widest text-primary focus:ring-primary placeholder:text-white/10"
-                disabled={isSubmitting || savedUser.solvedChallenges?.includes(selectedChallenge?.id || '')}
+                disabled={isSubmitting || currentUser.solvedChallenges.includes(selectedChallenge?.id || '')}
                 autoFocus
               />
               <DialogFooter>
-                {!savedUser.solvedChallenges?.includes(selectedChallenge?.id || '') ? (
+                {!currentUser.solvedChallenges.includes(selectedChallenge?.id || '') ? (
                   <Button
                     type="submit"
                     className="w-full h-12 text-lg bg-primary hover:bg-primary/90 text-white font-bold"

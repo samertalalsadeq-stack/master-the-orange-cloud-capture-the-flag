@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, Medal, Crown, Target } from 'lucide-react';
 import { api } from '@/lib/api-client';
@@ -9,11 +9,18 @@ import { Badge } from '@/components/ui/badge';
 import type { LeaderboardEntry, CTFUser } from '@shared/types';
 import { cn } from '@/lib/utils';
 export function LeaderboardPage() {
-  const savedUser = JSON.parse(localStorage.getItem('ctf_user') || '{}') as CTFUser;
+  const currentUser = useMemo(() => {
+    try {
+      const stored = localStorage.getItem('ctf_user');
+      return stored ? (JSON.parse(stored) as CTFUser) : null;
+    } catch (e) {
+      return null;
+    }
+  }, []);
   const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['leaderboard'],
     queryFn: () => api<LeaderboardEntry[]>('/api/leaderboard'),
-    refetchInterval: 30000 
+    refetchInterval: 15000 // Faster refresh for live competition feel
   });
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -69,38 +76,45 @@ export function LeaderboardPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={4} className="text-center py-12 text-white/20 italic">Decrypting rank data...</TableCell></TableRow>
-              ) : leaderboard?.map((entry) => (
-                <TableRow
-                  key={entry.username}
-                  className={cn(
-                    "border-white/5 hover:bg-white/5 group transition-colors",
-                    entry.username === savedUser.username && "bg-primary/10 hover:bg-primary/20"
-                  )}
-                >
-                  <TableCell className="py-4 px-6">
-                    <div className="flex items-center justify-center">
-                      {getRankIcon(entry.rank)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-6">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-8 border border-white/10">
-                        <AvatarFallback className="bg-primary/20 text-primary text-xs">{entry.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <span className={cn(
-                        "font-bold text-lg",
-                        entry.username === savedUser.username ? "text-primary" : "text-white/80"
-                      )}>{entry.username}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right px-6">
-                    <span className="font-mono text-xl font-bold text-white group-hover:text-primary transition-colors">{entry.score}</span>
-                  </TableCell>
-                  <TableCell className="text-right px-6">
-                    <Badge variant="outline" className="font-mono text-white/40 border-white/10">{entry.solvedCount}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              ) : leaderboard?.length === 0 ? (
+                <TableRow><TableCell colSpan={4} className="text-center py-12 text-white/20 italic">No infiltrators detected.</TableCell></TableRow>
+              ) : (
+                leaderboard?.map((entry) => {
+                  const isMe = entry.username === currentUser?.username;
+                  return (
+                    <TableRow
+                      key={entry.username}
+                      className={cn(
+                        "border-white/5 hover:bg-white/5 group transition-colors",
+                        isMe && "bg-primary/10 hover:bg-primary/20"
+                      )}
+                    >
+                      <TableCell className="py-4 px-6">
+                        <div className="flex items-center justify-center">
+                          {getRankIcon(entry.rank)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="size-8 border border-white/10">
+                            <AvatarFallback className="bg-primary/20 text-primary text-xs">{entry.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className={cn(
+                            "font-bold text-lg",
+                            isMe ? "text-primary" : "text-white/80"
+                          )}>{entry.username}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right px-6">
+                        <span className="font-mono text-xl font-bold text-white group-hover:text-primary transition-colors">{entry.score}</span>
+                      </TableCell>
+                      <TableCell className="text-right px-6">
+                        <Badge variant="outline" className="font-mono text-white/40 border-white/10">{entry.solvedCount}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </div>
