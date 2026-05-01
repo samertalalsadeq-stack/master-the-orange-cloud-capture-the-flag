@@ -1,75 +1,76 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, ChatBoardEntity } from "./entities";
+import { CTFUserEntity, ChallengeEntity } from "./entities";
 import { ok, bad, notFound, isStr } from './core-utils';
-
+import type { LeaderboardEntry } from "@shared/types";
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
-  app.get('/api/test', (c) => c.json({ success: true, data: { name: 'CF Workers Demo' }}));
-
-  // USERS
-  app.get('/api/users', async (c) => {
-    await UserEntity.ensureSeed(c.env);
-    const cq = c.req.query('cursor');
-    const lq = c.req.query('limit');
-    const page = await UserEntity.list(c.env, cq ?? null, lq ? Math.max(1, (Number(lq) | 0)) : undefined);
-    return ok(c, page);
+  // SEED ON FIRST ACCESS
+  app.use('/api/*', async (c, next) => {
+    await ChallengeEntity.ensureSeed(c.env);
+    await CTFUserEntity.ensureSeed(c.env);
+    await next();
   });
-
-  app.post('/api/users', async (c) => {
-    const { name } = (await c.req.json()) as { name?: string };
-    if (!name?.trim()) return bad(c, 'name required');
-    return ok(c, await UserEntity.create(c.env, { id: crypto.randomUUID(), name: name.trim() }));
+  // AUTH: Login / Register
+  app.post('/api/auth', async (c) => {
+    const { username } = await c.req.json() as { username: string };
+    if (!username || username.length < 3) return bad(c, "Invalid username");
+    // Check if user exists by listing (simple implementation)
+    const { items: users } = await CTFUserEntity.list(c.env);
+    let user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) {
+      user = await CTFUserEntity.create(c.env, {
+        id: crypto.randomUUID(),
+        username,
+        score: 0,
+        solvedChallenges: [],
+        isAdmin: false,
+        joinedAt: Date.now()
+      });
+    }
+    return ok(c, user);
   });
-
-  // CHATS
-  app.get('/api/chats', async (c) => {
-    await ChatBoardEntity.ensureSeed(c.env);
-    const cq = c.req.query('cursor');
-    const lq = c.req.query('limit');
-    const page = await ChatBoardEntity.list(c.env, cq ?? null, lq ? Math.max(1, (Number(lq) | 0)) : undefined);
-    return ok(c, page);
+  // CHALLENGES: List (Flags stripped)
+  app.get('/api/challenges', async (c) => {
+    const { items: challenges } = await ChallengeEntity.list(c.env);
+    const stripped = challenges
+      .filter(ch => ch.isVisible)
+      .map(({ flag, ...rest }) => rest);
+    return ok(c, stripped);
   });
-
-  app.post('/api/chats', async (c) => {
-    const { title } = (await c.req.json()) as { title?: string };
-    if (!title?.trim()) return bad(c, 'title required');
-    const created = await ChatBoardEntity.create(c.env, { id: crypto.randomUUID(), title: title.trim(), messages: [] });
-    return ok(c, { id: created.id, title: created.title });
+  // SUBMIT FLAG
+  app.post('/api/challenges/submit', async (c) => {
+    const { userId, challengeId, flag } = await c.req.json() as { userId: string; challengeId: string; flag: string };
+    if (!userId || !challengeId || !flag) return bad(c, "Missing fields");
+    const userEntity = new CTFUserEntity(c.env, userId);
+    if (!await userEntity.exists()) return notFound(c, "User not found");
+    const result = await userEntity.submitFlag(c.env, challengeId, flag);
+    const updatedUser = await userEntity.getState();
+    return ok(c, { ...result, newScore: updatedUser.score });
   });
-
-  // MESSAGES
-  app.get('/api/chats/:chatId/messages', async (c) => {
-    const chat = new ChatBoardEntity(c.env, c.req.param('chatId'));
-    if (!await chat.exists()) return notFound(c, 'chat not found');
-    return ok(c, await chat.listMessages());
+  // LEADERBOARD
+  app.get('/api/leaderboard', async (c) => {
+    const { items: users } = await CTFUserEntity.list(c.env);
+    const leaderboard: LeaderboardEntry[] = users
+      .sort((a, b) => b.score - a.score || a.joinedAt - b.joinedAt)
+      .map((u, idx) => ({
+        username: u.username,
+        score: u.score,
+        solvedCount: u.solvedChallenges.length,
+        rank: idx + 1
+      }));
+    return ok(c, leaderboard);
   });
-
-  app.post('/api/chats/:chatId/messages', async (c) => {
-    const chatId = c.req.param('chatId');
-    const { userId, text } = (await c.req.json()) as { userId?: string; text?: string };
-    if (!isStr(userId) || !text?.trim()) return bad(c, 'userId and text required');
-    const chat = new ChatBoardEntity(c.env, chatId);
-    if (!await chat.exists()) return notFound(c, 'chat not found');
-    return ok(c, await chat.sendMessage(userId, text.trim()));
+  // ADMIN: List full challenges
+  app.get('/api/admin/challenges', async (c) => {
+    const { items } = await ChallengeEntity.list(c.env);
+    return ok(c, items);
   });
-
-  // DELETE: Users
-  app.delete('/api/users/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await UserEntity.delete(c.env, c.req.param('id')) }));
-
-  app.post('/api/users/deleteMany', async (c) => {
-    const { ids } = (await c.req.json()) as { ids?: string[] };
-    const list = ids?.filter(isStr) ?? [];
-    if (list.length === 0) return bad(c, 'ids required');
-    return ok(c, { deletedCount: await UserEntity.deleteMany(c.env, list), ids: list });
-  });
-
-  // DELETE: Chats
-  app.delete('/api/chats/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await ChatBoardEntity.delete(c.env, c.req.param('id')) }));
-
-  app.post('/api/chats/deleteMany', async (c) => {
-    const { ids } = (await c.req.json()) as { ids?: string[] };
-    const list = ids?.filter(isStr) ?? [];
-    if (list.length === 0) return bad(c, 'ids required');
-    return ok(c, { deletedCount: await ChatBoardEntity.deleteMany(c.env, list), ids: list });
+  // ADMIN: Toggle Visibility
+  app.post('/api/admin/challenges/:id/toggle', async (c) => {
+    const id = c.req.param('id');
+    const entity = new ChallengeEntity(c.env, id);
+    if (!await entity.exists()) return notFound(c);
+    const state = await entity.mutate(s => ({ ...s, isVisible: !s.isVisible }));
+    return ok(c, state);
   });
 }

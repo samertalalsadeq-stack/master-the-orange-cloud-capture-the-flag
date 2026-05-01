@@ -3,22 +3,32 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
 }
-
-// Minimal real-world chat example types (shared by frontend and worker)
-export interface User {
+export interface CTFUser {
   id: string;
-  name: string;
+  username: string;
+  score: number;
+  solvedChallenges: string[];
+  isAdmin: boolean;
+  joinedAt: number;
 }
-
-export interface Chat {
+export type ChallengeCategory = 'ZTNA' | 'SWG' | 'CASB' | 'WAAP' | 'Network' | 'Identity' | 'DLP';
+export interface Challenge {
   id: string;
   title: string;
+  description: string;
+  points: number;
+  flag?: string; // Optional because we strip it for players
+  category: ChallengeCategory;
+  isVisible: boolean;
 }
-
-export interface ChatMessage {
-  id: string;
-  chatId: string;
-  userId: string;
-  text: string;
-  ts: number; // epoch millis
+export interface SubmissionResponse {
+  correct: boolean;
+  message: string;
+  newScore?: number;
+}
+export interface LeaderboardEntry {
+  username: string;
+  score: number;
+  solvedCount: number;
+  rank: number;
 }
