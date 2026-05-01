@@ -17,19 +17,17 @@ export function NavBackButton({ className, fallbackPath = '/arena' }: NavBackBut
     }
   };
   return (
-    <div className="mb-6">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleBack}
-        className={cn(
-          "gap-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all border border-white/5 hover:border-primary/20 hover:scale-105 active:scale-95 group px-4 h-9 rounded-full",
-          className
-        )}
-      >
-        <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform" />
-        <span className="font-mono text-xs uppercase tracking-widest orange-glow font-bold">Return</span>
-      </Button>
-    </div>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleBack}
+      className={cn(
+        "gap-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all hover:scale-105 active:scale-95 group",
+        className
+      )}
+    >
+      <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform" />
+      <span className="font-mono text-xs uppercase tracking-widest orange-glow font-bold">Return</span>
+    </Button>
   );
 }

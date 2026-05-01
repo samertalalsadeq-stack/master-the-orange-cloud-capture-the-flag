@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast, Toaster } from 'sonner';
+import { NavBackButton } from '@/components/NavBackButton';
 import confetti from 'canvas-confetti';
 import type { Challenge, SubmissionResponse, ChallengeCategory } from '@shared/types';
 import { cn } from '@/lib/utils';
@@ -100,12 +101,15 @@ export function ChallengesPage() {
           <h1 className="text-4xl font-display font-black uppercase tracking-tight text-white mb-2 italic">The <span className="text-primary">Arena</span></h1>
           <p className="text-white/50">Breach the perimeters of the Cloudflare One ecosystem.</p>
         </div>
+        <div className="flex items-center gap-4 ml-auto md:ml-0">
+          <NavBackButton />
         <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(243,128,32,0.1)]">
           <Trophy className="size-6 text-primary" />
           <div className="font-mono">
             <div className="text-xs text-white/40 uppercase tracking-widest">Global Score</div>
             <div className="text-2xl font-bold text-white">{currentUser.score} <span className="text-sm text-white/40 ml-1">PTS</span></div>
           </div>
+        </div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

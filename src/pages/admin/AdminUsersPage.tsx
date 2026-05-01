@@ -12,6 +12,7 @@ import { toast, Toaster } from 'sonner';
 import type { CTFUser } from '@shared/types';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/use-user';
+import { NavBackButton } from '@/components/NavBackButton';
 export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -71,6 +72,8 @@ export function AdminUsersPage() {
           </h1>
           <p className="text-white/40 font-mono text-sm uppercase tracking-widest mt-1">Command & Control Center</p>
         </div>
+        <div className="flex items-center gap-4">
+          <NavBackButton />
         <div className="relative w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
           <Input
@@ -79,6 +82,7 @@ export function AdminUsersPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
         </div>
       </div>
       <Card className="bg-card border-white/10 overflow-hidden shadow-2xl">

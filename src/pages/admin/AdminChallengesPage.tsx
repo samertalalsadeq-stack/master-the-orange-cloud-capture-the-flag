@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast, Toaster } from 'sonner';
 import type { Challenge, ChallengeCategory } from '@shared/types';
 import { useUser } from '@/hooks/use-user';
+import { NavBackButton } from '@/components/NavBackButton';
 export function AdminChallengesPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,9 +76,12 @@ export function AdminChallengesPage() {
           </h1>
           <p className="text-white/40 font-mono text-sm uppercase tracking-widest mt-1">Registry of Global Challenges</p>
         </div>
+        <div className="flex items-center gap-4">
+          <NavBackButton />
         <Button onClick={() => setEditingChallenge({ category: 'ZTNA', points: 500, isVisible: true })} className="bg-primary hover:bg-primary/90 text-white font-bold h-12">
           <Plus className="mr-2 size-5" /> NEW MISSION
         </Button>
+        </div>
       </div>
       <div className="flex flex-col sm:flex-row gap-4 items-center">
         <div className="relative flex-1 w-full">
@@ -230,9 +234,11 @@ export function AdminChallengesPage() {
                   toast.error("Title and flag are required");
                   return;
                 }
-                editingChallenge?.id 
-                  ? updateMutation.mutate(editingChallenge) 
-                  : createMutation.mutate(editingChallenge as Challenge);
+                if (editingChallenge?.id) {
+                  updateMutation.mutate(editingChallenge);
+                } else {
+                  createMutation.mutate(editingChallenge as Challenge);
+                }
               }}
               className="bg-primary hover:bg-primary/90 text-white"
             >

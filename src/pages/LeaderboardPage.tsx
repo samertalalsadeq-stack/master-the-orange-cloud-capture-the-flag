@@ -15,6 +15,7 @@ import {
 import type { LeaderboardEntry } from '@shared/types';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/use-user';
+import { NavBackButton } from '@/components/NavBackButton';
 export function LeaderboardPage() {
   const { user: currentUser } = useUser();
   const { data: leaderboard, isLoading: leadLoading } = useQuery<LeaderboardEntry[]>({
@@ -38,7 +39,10 @@ export function LeaderboardPage() {
   const ORANGE_PALETTE = ['#F38020', '#fa9d52', '#fcb884', '#ffd3b5', '#ffebe0'];
   return (
     <div className="space-y-10 animate-fade-in">
-      <div className="text-center space-y-4">
+      <div className="relative text-center space-y-4">
+        <div className="absolute right-0 top-0">
+          <NavBackButton />
+        </div>
         <h1 className="text-5xl font-display font-black uppercase italic tracking-tight text-white">
           <span className="text-primary">Hall</span> of Fame
         </h1>
