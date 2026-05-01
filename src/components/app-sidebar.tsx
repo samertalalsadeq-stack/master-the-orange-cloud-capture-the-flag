@@ -23,19 +23,23 @@ export function AppSidebar(): JSX.Element {
   const { user, isAdmin, logout } = useUser();
   const [sessionTime, setSessionTime] = useState<string>("0m 0s");
   const formatTime = (ms: number) => {
+    if (isNaN(ms) || ms < 0) return "0m 0s";
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes}m ${seconds}s`;
   };
   const updateTimer = useCallback(() => {
-    const startTime = localStorage.getItem('ctf_session_start');
-    if (startTime) {
-      const elapsed = Date.now() - parseInt(startTime, 10);
-      setSessionTime(formatTime(elapsed));
-    } else {
-      setSessionTime("0m 0s");
+    const startTimeStr = localStorage.getItem('ctf_session_start');
+    if (startTimeStr) {
+      const startTime = parseInt(startTimeStr, 10);
+      if (!isNaN(startTime)) {
+        const elapsed = Math.max(0, Date.now() - startTime);
+        setSessionTime(formatTime(elapsed));
+        return;
+      }
     }
+    setSessionTime("0m 0s");
   }, []);
   useEffect(() => {
     updateTimer();
@@ -49,10 +53,11 @@ export function AppSidebar(): JSX.Element {
       window.removeEventListener('user-session-changed', handleSessionChange);
     };
   }, [updateTimer]);
+  const userId = user?.id;
   const { data: users } = useQuery<CTFUser[]>({
-    queryKey: ['admin-users-summary'],
-    queryFn: () => api<CTFUser[]>('/api/admin/users', { headers: { 'X-User-ID': user?.id || '' } }),
-    enabled: !!user?.id && isAdmin,
+    queryKey: ['admin-users-summary', userId],
+    queryFn: () => api<CTFUser[]>('/api/admin/users', { headers: { 'X-User-ID': userId || '' } }),
+    enabled: !!userId && isAdmin,
     refetchInterval: 30000
   });
   const pendingCount = users?.filter(u => !u.isApproved && !u.isAdmin).length ?? 0;

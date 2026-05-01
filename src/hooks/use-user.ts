@@ -24,7 +24,6 @@ export function useUser() {
   }, []);
   const updateUser = useCallback((userData: CTFUser) => {
     localStorage.setItem('ctf_user', JSON.stringify(userData));
-    // Preserve existing session start if it exists
     if (!localStorage.getItem('ctf_session_start')) {
       localStorage.setItem('ctf_session_start', Date.now().toString());
     }
@@ -55,24 +54,31 @@ export function useUser() {
   const userId = useMemo(() => user?.id ?? '', [user]);
   useEffect(() => {
     if (!userId) return;
-    let canceled = false;
-    const interval = setInterval(async () => {
+    let isSubscribed = true;
+    const POLLING_INTERVAL = 30000; // 30 seconds for standard session sync
+    const pollSession = async () => {
       try {
         const freshUser = await api<CTFUser>('/api/me', {
           headers: { 'X-User-ID': userId }
         });
-        if (!canceled) {
+        if (isSubscribed) {
           updateUser(freshUser);
         }
-      } catch {
-        // Silent catch
+      } catch (err: any) {
+        // If the session is invalid (401/403/404), logout the user
+        if (err.message?.toLowerCase().includes('not found') || 
+            err.message?.toLowerCase().includes('authentication') ||
+            err.message?.toLowerCase().includes('forbidden')) {
+          if (isSubscribed) logout();
+        }
       }
-    }, 20000);
+    };
+    const interval = setInterval(pollSession, POLLING_INTERVAL);
     return () => {
-      canceled = true;
+      isSubscribed = false;
       clearInterval(interval);
     };
-  }, [userId, updateUser]);
+  }, [userId, updateUser, logout]);
   return {
     user,
     isAdmin,
