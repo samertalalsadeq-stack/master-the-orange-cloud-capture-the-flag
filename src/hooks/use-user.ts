@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { api } from '@/lib/api-client';
 import type { CTFUser } from '@shared/types';
 export function useUser() {
   const [user, setUser] = useState<CTFUser | null>(() => {
@@ -26,7 +27,7 @@ export function useUser() {
   }, []);
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent | Event) => {
-      if (e instanceof StorageEvent && e.key !== 'ctf_user' && e.key !== null) return;
+      if (e instanceof StorageEvent && e.key !== 'ctf_user') return;
       try {
         const stored = localStorage.getItem('ctf_user');
         const parsed = stored ? (JSON.parse(stored) as CTFUser) : null;
@@ -45,6 +46,31 @@ export function useUser() {
   const isAdmin = useMemo(() => user?.isAdmin ?? false, [user]);
   const isApproved = useMemo(() => user?.isApproved ?? false, [user]);
   const isPending = useMemo(() => !!user && !user.isApproved && !user.isAdmin, [user]);
+
+  const userId = useMemo(() => user?.id ?? '', [user]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    let canceled = false;
+    const interval = setInterval(async () => {
+      try {
+        const freshUser = await api<CTFUser>('/api/me', {
+          headers: { 'X-User-ID': userId }
+        });
+        if (!canceled) {
+          updateUser(freshUser);
+        }
+      } catch {
+        // Silent catch
+      }
+    }, 20000);
+
+    return () => {
+      canceled = true;
+      clearInterval(interval);
+    };
+  }, [userId, updateUser]);
   return {
     user,
     isAdmin,

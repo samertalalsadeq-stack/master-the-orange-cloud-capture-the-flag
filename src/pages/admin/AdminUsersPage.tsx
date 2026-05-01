@@ -138,11 +138,14 @@ export function AdminUsersPage() {
         </Table>
       </Card>
       <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-        <DialogContent className="bg-card border-white/10 text-white">
+        <DialogContent className="bg-card border-white/10 text-white" aria-describedby="user-edit-desc">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display flex items-center gap-2">
               <ShieldCheck className="size-5 text-primary" /> Modify Operative Intelligence
             </DialogTitle>
+            <DialogDescription id="user-edit-desc">
+              Adjust operative clearance level and profile data. Changes will sync across all sectors.
+            </DialogDescription>
           </DialogHeader>
           {editingUser && (
             <div className="space-y-6 py-4">

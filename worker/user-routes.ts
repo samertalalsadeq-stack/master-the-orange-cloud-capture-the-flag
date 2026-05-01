@@ -70,6 +70,15 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     console.log(`[EMAIL SIMULATION] To: samer@cloudflare.com | Subject: New Operative Registration | Body: User ${username} (${email}) has registered and is awaiting approval.`);
     return ok(c, stripSensitive(newUser));
   });
+
+  app.get('/api/me', async (c) => {
+    const userId = c.req.header('X-User-ID');
+    if(!userId) return bad(c, 'Authentication required');
+    const userEntity = new CTFUserEntity(c.env, userId);
+    if(!await userEntity.exists()) return bad(c, 'User not found');
+    const user = await userEntity.getState();
+    return ok(c, stripSensitive(user));
+  });
   app.get('/api/challenges', async (c) => {
     const { items: challenges } = await ChallengeEntity.list(c.env);
     const stripped = challenges
@@ -125,14 +134,14 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const id = c.req.param('id');
     const data = await c.req.json();
     const userEntity = new CTFUserEntity(c.env, id);
-    if (!await userEntity.exists()) return notFound(c);
+    if (!await userEntity.exists()) return notFound(c, "User not found");
     const updated = await userEntity.mutate(s => ({ ...s, ...data, id: s.id }));
     return ok(c, stripSensitive(updated));
   });
   app.post('/api/admin/users/reset/:id', async (c) => {
     const id = c.req.param('id');
     const userEntity = new CTFUserEntity(c.env, id);
-    if (!await userEntity.exists()) return notFound(c);
+    if (!await userEntity.exists()) return notFound(c, "User not found");
     const updated = await userEntity.mutate(s => ({ ...s, score: 0, solvedChallenges: [] }));
     return ok(c, stripSensitive(updated));
   });
@@ -163,7 +172,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const id = c.req.param('id');
     const data = await c.req.json() as Partial<Challenge>;
     const entity = new ChallengeEntity(c.env, id);
-    if (!await entity.exists()) return notFound(c);
+    if (!await entity.exists()) return notFound(c, "Challenge not found");
     const updated = await entity.mutate(s => ({ ...s, ...data, id: s.id }));
     return ok(c, updated);
   });
