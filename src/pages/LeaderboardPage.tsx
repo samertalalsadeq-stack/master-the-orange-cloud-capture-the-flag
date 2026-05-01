@@ -73,7 +73,12 @@ export function LeaderboardPage() {
                     <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis hide />
                     <Tooltip
-                      contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: 'var(--radius)',
+                        color: 'hsl(var(--foreground))'
+                      }}
                       itemStyle={{ color: '#F38020' }}
                       cursor={{ fill: 'rgba(243, 128, 32, 0.1)' }}
                     />
@@ -116,7 +121,12 @@ export function LeaderboardPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: 'var(--radius)',
+                        color: 'hsl(var(--foreground))'
+                      }}
                       itemStyle={{ color: '#F38020' }}
                     />
                   </PieChart>
