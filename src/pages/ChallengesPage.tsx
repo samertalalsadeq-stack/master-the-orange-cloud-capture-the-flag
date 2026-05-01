@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Unlock, Trophy, Shield, Zap, Globe, Lock, Loader2 } from 'lucide-react';
+import { 
+  CheckCircle2, 
+  Unlock, 
+  Trophy, 
+  Shield, 
+  Zap, 
+  Globe, 
+  Lock, 
+  Loader2, 
+  Server, 
+  Fingerprint, 
+  Search, 
+  ShieldCheck 
+} from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -37,7 +50,7 @@ export function ChallengesPage() {
           particleCount: 150,
           spread: 80,
           origin: { y: 0.6 },
-          colors: ['#F38020', '#FFFFFF', '#1E1E1E']
+          colors: ['#F38020', '#FAFAFA', '#1E1E1E']
         });
         toast.success(data.message);
         updateUser({
@@ -66,6 +79,10 @@ export function ChallengesPage() {
       case 'ZTNA': return <Shield className="size-3" />;
       case 'SWG': return <Globe className="size-3" />;
       case 'WAAP': return <Zap className="size-3" />;
+      case 'Network': return <Server className="size-3" />;
+      case 'Identity': return <Fingerprint className="size-3" />;
+      case 'CASB': return <Search className="size-3" />;
+      case 'DLP': return <ShieldCheck className="size-3" />;
       default: return <Lock className="size-3" />;
     }
   };
@@ -149,11 +166,14 @@ export function ChallengesPage() {
         <DialogContent className="bg-card border-white/10 text-white max-w-xl">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
-               <Badge variant="outline" className="text-primary border-primary/20">{selectedChallenge?.category}</Badge>
+               <Badge variant="outline" className="text-primary border-primary/20 flex items-center gap-1">
+                 {selectedChallenge && getCategoryIcon(selectedChallenge.category)}
+                 {selectedChallenge?.category}
+               </Badge>
                <span className="text-white/20 text-xs font-mono">CODE: {selectedChallenge?.id}</span>
             </div>
             <DialogTitle className="text-3xl font-display uppercase italic tracking-tighter">{selectedChallenge?.title}</DialogTitle>
-            <DialogDescription className="text-white/50 text-lg mt-4 leading-relaxed font-sans">
+            <DialogDescription className="text-white/80 text-lg mt-4 leading-loose font-sans font-medium">
               {selectedChallenge?.description}
             </DialogDescription>
           </DialogHeader>

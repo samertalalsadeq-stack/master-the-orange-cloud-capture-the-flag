@@ -23,7 +23,6 @@ export function AppSidebar(): JSX.Element {
     navigate('/');
   };
   const navItems = [
-    { label: "Dashboard", icon: Home, path: "/" },
     { label: "The Arena", icon: Swords, path: "/arena" },
     { label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
   ];
@@ -94,7 +93,7 @@ export function AppSidebar(): JSX.Element {
           <SidebarMenuItem>
             <div className="px-3 py-2 mb-2">
               <p className="text-[10px] text-white/30 uppercase tracking-tighter">Identified as</p>
-              <p className="text-sm font-mono text-primary truncate">{user?.username || 'Anonymous'}</p>
+              <p className="text-sm font-mono text-primary truncate orange-glow">{user?.username || 'Anonymous'}</p>
             </div>
             <SidebarMenuButton
               onClick={handleLogout}
