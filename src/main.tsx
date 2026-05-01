@@ -14,7 +14,8 @@ import '@/index.css'
 import { HomePage } from '@/pages/HomePage'
 import { ChallengesPage } from '@/pages/ChallengesPage'
 import { LeaderboardPage } from '@/pages/LeaderboardPage'
-import { AdminPage } from '@/pages/AdminPage'
+import { AdminUsersPage } from '@/pages/admin/AdminUsersPage'
+import { AdminChallengesPage } from '@/pages/admin/AdminChallengesPage'
 import { AppLayout } from '@/components/layout/AppLayout'
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,8 +42,13 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
   {
-    path: "/admin",
-    element: <AppLayout container><AdminPage /></AppLayout>,
+    path: "/admin/users",
+    element: <AppLayout container><AdminUsersPage /></AppLayout>,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/admin/challenges",
+    element: <AppLayout container><AdminChallengesPage /></AppLayout>,
     errorElement: <RouteErrorBoundary />,
   },
 ]);

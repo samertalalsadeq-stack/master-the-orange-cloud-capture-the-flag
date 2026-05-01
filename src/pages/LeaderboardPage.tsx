@@ -1,11 +1,15 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, Medal, Crown, Target } from 'lucide-react';
+import { Trophy, Medal, Crown, Target, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie
+} from 'recharts';
 import type { LeaderboardEntry, CTFUser } from '@shared/types';
 import { cn } from '@/lib/utils';
 export function LeaderboardPage() {
@@ -20,7 +24,12 @@ export function LeaderboardPage() {
   const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['leaderboard'],
     queryFn: () => api<LeaderboardEntry[]>('/api/leaderboard'),
-    refetchInterval: 15000 // Faster refresh for live competition feel
+    refetchInterval: 15000
+  });
+  const { data: stats } = useQuery<{ categories: { name: string, value: number }[], topScores: { name: string, score: number }[] }>({
+    queryKey: ['leaderboard-stats'],
+    queryFn: () => api<any>('/api/leaderboard/stats'),
+    refetchInterval: 60000
   });
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -30,6 +39,7 @@ export function LeaderboardPage() {
       default: return <span className="font-mono text-white/40">{rank}</span>;
     }
   };
+  const ORANGE_PALETTE = ['#F38020', '#fa9d52', '#fcb884', '#ffd3b5', '#ffebe0'];
   return (
     <div className="space-y-10 animate-fade-in">
       <div className="text-center space-y-4">
@@ -40,27 +50,60 @@ export function LeaderboardPage() {
           The elite of the Orange Cloud. Only the fastest and most precise hackers make it to the top.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {leaderboard?.slice(0, 3).map((entry, idx) => (
-          <Card key={entry.username} className={cn(
-            "bg-card border-white/10 relative overflow-hidden transition-all hover:scale-105",
-            idx === 0 ? "border-primary/50 shadow-[0_0_30px_rgba(243,128,32,0.2)] order-1 md:order-2 animate-pulse-subtle" : idx === 1 ? "order-2 md:order-1" : "order-3"
-          )}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-primary/20" />
-            <CardHeader className="text-center pb-2">
-              <div className="mx-auto mb-4 p-4 rounded-full bg-white/5 border border-white/10">
-                {getRankIcon(entry.rank)}
-              </div>
-              <CardTitle className="text-2xl text-white font-display truncate">{entry.username}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="text-4xl font-bold text-primary font-mono">{entry.score}</div>
-              <div className="flex justify-center gap-4 text-white/40 text-sm">
-                <span className="flex items-center gap-1"><Target className="size-4" /> {entry.solvedCount} Solved</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="bg-card border-white/10 shadow-xl overflow-hidden">
+          <CardHeader className="flex flex-row items-center gap-3 pb-2 border-b border-white/5">
+            <BarChart3 className="size-5 text-primary" />
+            <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">Top Hackers</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px] pt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats?.topScores}>
+                <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis hide />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                  itemStyle={{ color: '#F38020' }}
+                  cursor={{ fill: 'rgba(243, 128, 32, 0.1)' }}
+                />
+                <Bar dataKey="score" fill="#F38020" radius={[4, 4, 0, 0]}>
+                  {stats?.topScores.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        <Card className="bg-card border-white/10 shadow-xl overflow-hidden">
+          <CardHeader className="flex flex-row items-center gap-3 pb-2 border-b border-white/5">
+            <PieChartIcon className="size-5 text-primary" />
+            <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">Mission Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px] pt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={stats?.categories}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {stats?.categories.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                  itemStyle={{ color: '#F38020' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
       <Card className="bg-card border-white/10 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">

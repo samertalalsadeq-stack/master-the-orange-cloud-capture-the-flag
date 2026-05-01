@@ -1,5 +1,5 @@
-import React from "react";
-import { Swords, Trophy, Shield, Home, LogOut } from "lucide-react";
+import React, { useMemo } from "react";
+import { Swords, Trophy, Shield, Home, LogOut, Users, Database } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -13,9 +13,14 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import type { CTFUser } from "@shared/types";
 export function AppSidebar(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useMemo(() => {
+    const stored = localStorage.getItem('ctf_user');
+    return stored ? JSON.parse(stored) as CTFUser : null;
+  }, []);
   const handleLogout = () => {
     localStorage.removeItem('ctf_user');
     navigate('/');
@@ -24,7 +29,10 @@ export function AppSidebar(): JSX.Element {
     { label: "Dashboard", icon: Home, path: "/" },
     { label: "The Arena", icon: Swords, path: "/arena" },
     { label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
-    { label: "Command Center", icon: Shield, path: "/admin" },
+  ];
+  const adminItems = [
+    { label: "Operatives", icon: Users, path: "/admin/users" },
+    { label: "Mission Database", icon: Database, path: "/admin/challenges" },
   ];
   return (
     <Sidebar className="border-r border-white/5 bg-black">
@@ -47,8 +55,8 @@ export function AppSidebar(): JSX.Element {
                   isActive={location.pathname === item.path}
                   className={cn(
                     "w-full justify-start transition-colors py-6 text-base font-medium",
-                    location.pathname === item.path 
-                      ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                    location.pathname === item.path
+                      ? "bg-primary/10 text-primary hover:bg-primary/20"
                       : "text-white/60 hover:text-white hover:bg-white/5"
                   )}
                 >
@@ -59,11 +67,35 @@ export function AppSidebar(): JSX.Element {
             ))}
           </SidebarMenu>
         </SidebarGroup>
+        {user?.isAdmin && (
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="text-white/40 px-2 text-xs uppercase tracking-widest font-bold">Command Center</SidebarGroupLabel>
+            <SidebarMenu className="mt-2 space-y-1">
+              {adminItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton
+                    onClick={() => navigate(item.path)}
+                    isActive={location.pathname === item.path}
+                    className={cn(
+                      "w-full justify-start transition-colors py-6 text-base font-medium",
+                      location.pathname === item.path
+                        ? "bg-primary/10 text-primary hover:bg-primary/20"
+                        : "text-white/60 hover:text-white hover:bg-white/5"
+                    )}
+                  >
+                    <item.icon className={cn("size-5", location.pathname === item.path ? "text-primary" : "text-white/40")} />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-white/5">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton 
+            <SidebarMenuButton
               onClick={handleLogout}
               className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
             >
