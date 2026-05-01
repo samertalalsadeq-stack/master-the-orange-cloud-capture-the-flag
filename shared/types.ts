@@ -6,9 +6,12 @@ export interface ApiResponse<T = unknown> {
 export interface CTFUser {
   id: string;
   username: string;
+  email: string;
   score: number;
   solvedChallenges: string[];
   isAdmin: boolean;
+  isApproved: boolean;
+  passwordHash: string;
   joinedAt: number;
 }
 export type ChallengeCategory = 'ZTNA' | 'SWG' | 'CASB' | 'WAAP' | 'Network' | 'Identity' | 'DLP';

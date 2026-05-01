@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { CTFUser } from '@shared/types';
 export function useUser() {
   const [user, setUser] = useState<CTFUser | null>(() => {
@@ -12,7 +12,6 @@ export function useUser() {
   const login = useCallback((userData: CTFUser) => {
     localStorage.setItem('ctf_user', JSON.stringify(userData));
     setUser(userData);
-    // Dispatch custom event for cross-component sync in same tab
     window.dispatchEvent(new Event('user-session-changed'));
   }, []);
   const logout = useCallback(() => {
@@ -43,9 +42,14 @@ export function useUser() {
       window.removeEventListener('user-session-changed', handleStorageChange);
     };
   }, []);
+  const isAdmin = useMemo(() => user?.isAdmin ?? false, [user]);
+  const isApproved = useMemo(() => user?.isApproved ?? false, [user]);
+  const isPending = useMemo(() => !!user && !user.isApproved && !user.isAdmin, [user]);
   return {
     user,
-    isAdmin: user?.isAdmin ?? false,
+    isAdmin,
+    isApproved,
+    isPending,
     isAuthenticated: !!user,
     login,
     logout,
