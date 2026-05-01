@@ -36,7 +36,8 @@ export function AdminChallengesPage() {
       toast.success("Mission encoded to database");
       queryClient.invalidateQueries({ queryKey: ['admin-challenges'] });
       setEditingChallenge(null);
-    }
+    },
+    onError: (err: Error) => toast.error(err.message)
   });
   const updateMutation = useMutation({
     mutationFn: (data: Partial<Challenge>) => api(`/api/admin/challenges/${data.id}`, {
@@ -48,7 +49,8 @@ export function AdminChallengesPage() {
       toast.success("Mission objective updated");
       queryClient.invalidateQueries({ queryKey: ['admin-challenges'] });
       setEditingChallenge(null);
-    }
+    },
+    onError: (err: Error) => toast.error(err.message)
   });
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api(`/api/admin/challenges/${id}`, {
@@ -58,8 +60,10 @@ export function AdminChallengesPage() {
     onSuccess: () => {
       toast.success("Mission purged");
       queryClient.invalidateQueries({ queryKey: ['admin-challenges'] });
-    }
+    },
+    onError: (err: Error) => toast.error(err.message)
   });
+  const isMutating = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
   const filteredChallenges = challenges?.filter(ch => {
     const matchesSearch = ch.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCat = categoryFilter === 'ALL' || ch.category === categoryFilter;
@@ -77,7 +81,11 @@ export function AdminChallengesPage() {
             </h1>
             <p className="text-white/40 font-mono text-sm uppercase tracking-widest mt-1">Registry of Global Challenges</p>
           </div>
-          <Button onClick={() => setEditingChallenge({ category: 'ZTNA', points: 500, isVisible: true })} className="bg-primary hover:bg-primary/90 text-white font-bold h-12 shadow-[0_0_15px_rgba(243,128,32,0.3)]">
+          <Button 
+            onClick={() => setEditingChallenge({ category: 'ZTNA', points: 500, isVisible: true })} 
+            className="bg-primary hover:bg-primary/90 text-white font-bold h-12 shadow-[0_0_15px_rgba(243,128,32,0.3)]"
+            disabled={isMutating}
+          >
             <Plus className="mr-2 size-5" /> NEW MISSION
           </Button>
         </div>
@@ -129,33 +137,46 @@ export function AdminChallengesPage() {
                      </div>
                    </TableCell>
                  </TableRow>
-              ) : filteredChallenges?.map((ch) => (
-                <TableRow key={ch.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                  <TableCell className="px-6 font-bold text-white text-lg min-w-[200px]">{ch.title}</TableCell>
-                  <TableCell className="px-6">
-                    <Badge variant="outline" className="border-primary/20 text-primary font-mono text-[10px] uppercase">
-                      {ch.category}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right px-6 font-mono font-bold text-primary">{ch.points}</TableCell>
-                  <TableCell className="text-right px-6">
-                    {ch.isVisible ? <Eye className="size-4 text-green-500 inline" /> : <EyeOff className="size-4 text-white/20 inline" />}
-                  </TableCell>
-                  <TableCell className="text-right px-6 space-x-2">
-                    <Button variant="ghost" size="icon" onClick={() => setEditingChallenge(ch)}>
-                      <Edit2 className="size-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="hover:text-destructive" onClick={() => deleteMutation.mutate(ch.id)}>
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              ) : filteredChallenges?.map((ch) => {
+                const isProcessing = deleteMutation.isPending && deleteMutation.variables === ch.id;
+                return (
+                  <TableRow key={ch.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                    <TableCell className="px-6 font-bold text-white text-lg min-w-[200px]">{ch.title}</TableCell>
+                    <TableCell className="px-6">
+                      <Badge variant="outline" className="border-primary/20 text-primary font-mono text-[10px] uppercase">
+                        {ch.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right px-6 font-mono font-bold text-primary">{ch.points}</TableCell>
+                    <TableCell className="text-right px-6">
+                      {ch.isVisible ? <Eye className="size-4 text-green-500 inline" /> : <EyeOff className="size-4 text-white/20 inline" />}
+                    </TableCell>
+                    <TableCell className="text-right px-6 space-x-2">
+                      <Button variant="ghost" size="icon" disabled={isMutating} onClick={() => setEditingChallenge(ch)}>
+                        <Edit2 className="size-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="hover:text-destructive" 
+                        disabled={isMutating} 
+                        onClick={() => {
+                          if (window.confirm(`Permanently purge mission ${ch.title}?`)) {
+                            deleteMutation.mutate(ch.id);
+                          }
+                        }}
+                      >
+                        {isProcessing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
       </Card>
-      <Dialog open={!!editingChallenge} onOpenChange={(open) => !open && setEditingChallenge(null)}>
+      <Dialog open={!!editingChallenge} onOpenChange={(open) => !open && !isMutating && setEditingChallenge(null)}>
         <DialogContent className="bg-card border-white/10 text-white max-w-2xl overflow-y-auto max-h-[90vh]" aria-describedby="mission-desc">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display uppercase italic text-primary">
@@ -173,6 +194,7 @@ export function AdminChallengesPage() {
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, title: e.target.value })}
                 className="bg-white/5 border-white/10"
                 placeholder="e.g. Operation Warp Speed"
+                disabled={isMutating}
               />
             </div>
             <div className="md:col-span-2 space-y-2">
@@ -182,6 +204,7 @@ export function AdminChallengesPage() {
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, description: e.target.value })}
                 className="bg-white/5 border-white/10"
                 placeholder="Details of the challenge..."
+                disabled={isMutating}
               />
             </div>
             <div className="space-y-2">
@@ -191,6 +214,7 @@ export function AdminChallengesPage() {
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, flag: e.target.value })}
                 className="bg-white/5 border-white/10 font-mono text-primary"
                 placeholder="CF{your_flag_here}"
+                disabled={isMutating}
               />
             </div>
             <div className="space-y-2">
@@ -200,6 +224,7 @@ export function AdminChallengesPage() {
                 value={editingChallenge?.points ?? 0}
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, points: parseInt(e.target.value) || 0 })}
                 className="bg-white/5 border-white/10"
+                disabled={isMutating}
               />
             </div>
             <div className="space-y-2">
@@ -207,6 +232,7 @@ export function AdminChallengesPage() {
               <Select
                 value={editingChallenge?.category}
                 onValueChange={(val) => setEditingChallenge({ ...editingChallenge, category: val as ChallengeCategory })}
+                disabled={isMutating}
               >
                 <SelectTrigger className="bg-white/5 border-white/10">
                   <SelectValue placeholder="Select Category" />
@@ -229,12 +255,13 @@ export function AdminChallengesPage() {
                 checked={editingChallenge?.isVisible ?? true}
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, isVisible: e.target.checked })}
                 className="accent-primary h-4 w-4"
+                disabled={isMutating}
               />
               <label htmlFor="isVisible" className="text-sm font-medium">Mission Active</label>
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setEditingChallenge(null)}>Cancel</Button>
+          <DialogFooter className="gap-3 sm:gap-2">
+            <Button variant="ghost" onClick={() => setEditingChallenge(null)} disabled={isMutating}>Cancel</Button>
             <Button
               onClick={() => {
                 if (!editingChallenge?.title || !editingChallenge?.flag) {
@@ -247,8 +274,10 @@ export function AdminChallengesPage() {
                   createMutation.mutate(editingChallenge as Challenge);
                 }
               }}
-              className="bg-primary hover:bg-primary/90 text-white font-bold"
+              className="bg-primary hover:bg-primary/90 text-white font-bold min-w-[140px]"
+              disabled={isMutating}
             >
+              {isMutating ? <Loader2 className="animate-spin size-4 mr-2" /> : null}
               Commit Mission
             </Button>
           </DialogFooter>
