@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Lock, Unlock, Trophy, Layers, Filter } from 'lucide-react';
+import { CheckCircle2, Unlock, Trophy, Shield, Zap, Globe, Lock } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { toast, Toaster } from 'sonner';
 import confetti from 'canvas-confetti';
-import type { Challenge, CTFUser, SubmissionResponse } from '@shared/types';
+import type { Challenge, CTFUser, SubmissionResponse, ChallengeCategory } from '@shared/types';
 import { cn } from '@/lib/utils';
 export function ChallengesPage() {
   const queryClient = useQueryClient();
@@ -23,17 +23,20 @@ export function ChallengesPage() {
     queryFn: () => api<Challenge[]>('/api/challenges'),
   });
   const submitMutation = useMutation({
-    mutationFn: (data: { challengeId: string; flag: string }) => 
+    mutationFn: (data: { challengeId: string; flag: string }) =>
       api<SubmissionResponse>('/api/challenges/submit', {
         method: 'POST',
         body: JSON.stringify({ userId: savedUser.id, ...data })
       }),
     onSuccess: (data) => {
       if (data.correct) {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#F38020', '#FFFFFF'] });
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#F38020', '#FFFFFF', '#1E1E1E'] });
         toast.success(data.message);
-        // Update local storage score if needed, though refreshing user state is better
-        const updated = { ...savedUser, score: data.newScore || savedUser.score, solvedChallenges: [...savedUser.solvedChallenges, selectedChallenge?.id || ''] };
+        const updated = { 
+          ...savedUser, 
+          score: data.newScore || savedUser.score, 
+          solvedChallenges: [...savedUser.solvedChallenges, selectedChallenge?.id || ''] 
+        };
         localStorage.setItem('ctf_user', JSON.stringify(updated));
         queryClient.invalidateQueries({ queryKey: ['challenges'] });
         setSelectedChallenge(null);
@@ -50,7 +53,15 @@ export function ChallengesPage() {
     setIsSubmitting(true);
     submitMutation.mutate({ challengeId: selectedChallenge.id, flag: flag.trim() });
   };
-  if (isLoading) return <div className="flex items-center justify-center h-96 text-primary">Scanning the perimeter...</div>;
+  const getCategoryIcon = (cat: ChallengeCategory) => {
+    switch (cat) {
+      case 'ZTNA': return <Shield className="size-3" />;
+      case 'SWG': return <Globe className="size-3" />;
+      case 'WAAP': return <Zap className="size-3" />;
+      default: return <Lock className="size-3" />;
+    }
+  };
+  if (isLoading) return <div className="flex items-center justify-center h-96 text-primary font-mono animate-pulse">SCANNING SECTORS...</div>;
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -58,11 +69,11 @@ export function ChallengesPage() {
           <h1 className="text-4xl font-display font-black uppercase tracking-tight text-white mb-2 italic">The <span className="text-primary">Arena</span></h1>
           <p className="text-white/50">Breach the perimeters of the Cloudflare One ecosystem.</p>
         </div>
-        <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10">
+        <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(243,128,32,0.1)]">
           <Trophy className="size-6 text-primary" />
           <div className="font-mono">
-            <div className="text-xs text-white/40 uppercase tracking-widest">Your Points</div>
-            <div className="text-2xl font-bold text-white">{savedUser.score}</div>
+            <div className="text-xs text-white/40 uppercase tracking-widest">Global Rank</div>
+            <div className="text-2xl font-bold text-white">{savedUser.score} <span className="text-sm text-white/40 ml-1">PTS</span></div>
           </div>
         </div>
       </div>
@@ -80,36 +91,38 @@ export function ChallengesPage() {
               >
                 <Card className={cn(
                   "h-full flex flex-col border-white/10 transition-all card-glow bg-card relative overflow-hidden",
-                  isSolved && "border-green-500/20"
+                  isSolved && "border-green-500/30 bg-green-500/[0.02]"
                 )}>
                   {isSolved && (
                     <div className="absolute top-2 right-2 z-10">
-                      <Badge className="bg-green-500/10 text-green-500 border-green-500/20 flex gap-1 items-center">
-                        <CheckCircle2 className="size-3" /> Solved
+                      <Badge className="bg-green-500/10 text-green-500 border-green-500/20 flex gap-1 items-center font-mono">
+                        <CheckCircle2 className="size-3" /> SOLVED
                       </Badge>
                     </div>
                   )}
                   <CardHeader>
                     <div className="flex justify-between items-start mb-2">
-                      <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 uppercase tracking-wider text-[10px]">
-                        {ch.category}
+                      <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 uppercase tracking-wider text-[10px] flex gap-1 items-center">
+                        {getCategoryIcon(ch.category)} {ch.category}
                       </Badge>
                       <div className="font-mono text-xl font-bold text-primary">{ch.points}</div>
                     </div>
-                    <CardTitle className="text-xl text-white">{ch.title}</CardTitle>
+                    <CardTitle className="text-xl text-white font-bold leading-tight">{ch.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1">
-                    <p className="text-white/40 text-sm line-clamp-3 mb-4">{ch.description}</p>
+                    <p className="text-white/40 text-sm line-clamp-3 mb-4 leading-relaxed">{ch.description}</p>
                   </CardContent>
                   <CardFooter>
-                    <Button 
+                    <Button
                       onClick={() => { setSelectedChallenge(ch); setFlag(''); }}
                       className={cn(
-                        "w-full font-bold",
-                        isSolved ? "bg-white/5 text-white/40 hover:bg-white/10" : "bg-primary text-white"
+                        "w-full font-bold transition-all",
+                        isSolved 
+                          ? "bg-white/5 text-white/40 hover:bg-white/10 border border-white/5" 
+                          : "bg-primary text-white shadow-[0_0_15px_rgba(243,128,32,0.3)] hover:shadow-[0_0_25px_rgba(243,128,32,0.5)]"
                       )}
                     >
-                      {isSolved ? "View Brief" : "Enter Mission"}
+                      {isSolved ? "MISSION ARCHIVE" : "INITIATE MISSION"}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -123,38 +136,38 @@ export function ChallengesPage() {
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
                <Badge variant="outline" className="text-primary border-primary/20">{selectedChallenge?.category}</Badge>
-               <span className="text-white/20 text-xs font-mono">MISSION ID: {selectedChallenge?.id}</span>
+               <span className="text-white/20 text-xs font-mono">CODE: {selectedChallenge?.id}</span>
             </div>
             <DialogTitle className="text-3xl font-display uppercase italic tracking-tighter">{selectedChallenge?.title}</DialogTitle>
-            <DialogDescription className="text-white/50 text-lg mt-4 leading-relaxed">
+            <DialogDescription className="text-white/50 text-lg mt-4 leading-relaxed font-sans">
               {selectedChallenge?.description}
             </DialogDescription>
           </DialogHeader>
           <div className="py-6 border-t border-white/5 mt-4">
             <h4 className="text-xs uppercase tracking-widest font-bold text-white/40 mb-4 flex items-center gap-2">
-              <Unlock className="size-3" /> Submit Flag
+              <Unlock className="size-3 text-primary" /> SUBMIT DECRYPTION FLAG
             </h4>
             <form onSubmit={handleFlagSubmit} className="space-y-4">
               <Input
                 value={flag}
                 onChange={(e) => setFlag(e.target.value)}
-                placeholder="CF{your_flag_here}"
-                className="bg-white/5 border-white/10 h-14 text-lg font-mono tracking-widest text-primary focus:ring-primary"
+                placeholder="CF{...}"
+                className="bg-white/5 border-white/10 h-14 text-lg font-mono tracking-widest text-primary focus:ring-primary placeholder:text-white/10"
                 disabled={isSubmitting || savedUser.solvedChallenges?.includes(selectedChallenge?.id || '')}
+                autoFocus
               />
               <DialogFooter>
-                {!savedUser.solvedChallenges?.includes(selectedChallenge?.id || '') && (
-                  <Button 
-                    type="submit" 
+                {!savedUser.solvedChallenges?.includes(selectedChallenge?.id || '') ? (
+                  <Button
+                    type="submit"
                     className="w-full h-12 text-lg bg-primary hover:bg-primary/90 text-white font-bold"
                     disabled={isSubmitting || !flag.trim()}
                   >
-                    {isSubmitting ? "Decrypting..." : "Exfiltrate Data"}
+                    {isSubmitting ? "UPLOADING..." : "EXFILTRATE FLAG"}
                   </Button>
-                )}
-                {savedUser.solvedChallenges?.includes(selectedChallenge?.id || '') && (
-                  <div className="w-full p-4 bg-green-500/10 rounded-lg text-green-500 border border-green-500/20 text-center font-bold">
-                    MISSION COMPLETE
+                ) : (
+                  <div className="w-full p-4 bg-green-500/10 rounded-lg text-green-500 border border-green-500/20 text-center font-bold font-mono tracking-widest">
+                    MISSION COMPLETE: DATA SECURED
                   </div>
                 )}
               </DialogFooter>

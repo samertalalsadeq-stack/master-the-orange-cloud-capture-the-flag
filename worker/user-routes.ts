@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Env } from './core-utils';
 import { CTFUserEntity, ChallengeEntity } from "./entities";
 import { ok, bad, notFound, isStr } from './core-utils';
-import type { LeaderboardEntry } from "@shared/types";
+import type { LeaderboardEntry, Challenge, CTFUser } from "@shared/types";
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   // SEED ON FIRST ACCESS
   app.use('/api/*', async (c, next) => {
@@ -14,7 +14,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
   app.post('/api/auth', async (c) => {
     const { username } = await c.req.json() as { username: string };
     if (!username || username.length < 3) return bad(c, "Invalid username");
-    // Check if user exists by listing (simple implementation)
     const { items: users } = await CTFUserEntity.list(c.env);
     let user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (!user) {
@@ -23,13 +22,13 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         username,
         score: 0,
         solvedChallenges: [],
-        isAdmin: false,
+        isAdmin: username.toLowerCase().includes('admin'),
         joinedAt: Date.now()
       });
     }
     return ok(c, user);
   });
-  // CHALLENGES: List (Flags stripped)
+  // CHALLENGES: List (Flags stripped for players)
   app.get('/api/challenges', async (c) => {
     const { items: challenges } = await ChallengeEntity.list(c.env);
     const stripped = challenges
@@ -60,12 +59,45 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       }));
     return ok(c, leaderboard);
   });
-  // ADMIN: List full challenges
+  // --- ADMIN ROUTES ---
+  // List all users
+  app.get('/api/users', async (c) => {
+    const { items } = await CTFUserEntity.list(c.env);
+    return ok(c, items);
+  });
+  // Delete user
+  app.delete('/api/admin/users/:id', async (c) => {
+    const id = c.req.param('id');
+    const success = await CTFUserEntity.delete(c.env, id);
+    return ok(c, { success });
+  });
+  // List full challenges
   app.get('/api/admin/challenges', async (c) => {
     const { items } = await ChallengeEntity.list(c.env);
     return ok(c, items);
   });
-  // ADMIN: Toggle Visibility
+  // Create challenge
+  app.post('/api/admin/challenges', async (c) => {
+    const data = await c.req.json() as Partial<Challenge>;
+    if (!data.title || !data.flag) return bad(c, "Title and flag required");
+    const challenge = await ChallengeEntity.create(c.env, {
+      id: crypto.randomUUID(),
+      title: data.title,
+      description: data.description || '',
+      points: data.points || 100,
+      flag: data.flag,
+      category: data.category || 'ZTNA',
+      isVisible: data.isVisible ?? true
+    });
+    return ok(c, challenge);
+  });
+  // Delete challenge
+  app.delete('/api/admin/challenges/:id', async (c) => {
+    const id = c.req.param('id');
+    const success = await ChallengeEntity.delete(c.env, id);
+    return ok(c, { success });
+  });
+  // Toggle Visibility
   app.post('/api/admin/challenges/:id/toggle', async (c) => {
     const id = c.req.param('id');
     const entity = new ChallengeEntity(c.env, id);

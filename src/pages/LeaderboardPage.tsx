@@ -1,10 +1,11 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, Medal, Crown, Target, Users } from 'lucide-react';
+import { Trophy, Medal, Crown, Target } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type { LeaderboardEntry, CTFUser } from '@shared/types';
 import { cn } from '@/lib/utils';
 export function LeaderboardPage() {
@@ -12,7 +13,7 @@ export function LeaderboardPage() {
   const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['leaderboard'],
     queryFn: () => api<LeaderboardEntry[]>('/api/leaderboard'),
-    refetchInterval: 30000 // Refresh every 30s
+    refetchInterval: 30000 
   });
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -25,14 +26,18 @@ export function LeaderboardPage() {
   return (
     <div className="space-y-10 animate-fade-in">
       <div className="text-center space-y-4">
-        <h1 className="text-5xl font-display font-black uppercase italic tracking-tight text-white"><span className="text-primary">Hall</span> of Fame</h1>
-        <p className="text-white/40 text-lg max-w-2xl mx-auto">The elite of the Orange Cloud. Only the fastest and most precise hackers make it to the top.</p>
+        <h1 className="text-5xl font-display font-black uppercase italic tracking-tight text-white">
+          <span className="text-primary">Hall</span> of Fame
+        </h1>
+        <p className="text-white/40 text-lg max-w-2xl mx-auto">
+          The elite of the Orange Cloud. Only the fastest and most precise hackers make it to the top.
+        </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         {leaderboard?.slice(0, 3).map((entry, idx) => (
           <Card key={entry.username} className={cn(
             "bg-card border-white/10 relative overflow-hidden transition-all hover:scale-105",
-            idx === 0 ? "border-primary/50 shadow-[0_0_30px_rgba(243,128,32,0.1)] order-1 md:order-2" : idx === 1 ? "order-2 md:order-1" : "order-3"
+            idx === 0 ? "border-primary/50 shadow-[0_0_30px_rgba(243,128,32,0.2)] order-1 md:order-2 animate-pulse-subtle" : idx === 1 ? "order-2 md:order-1" : "order-3"
           )}>
             <div className="absolute top-0 left-0 w-full h-1 bg-primary/20" />
             <CardHeader className="text-center pb-2">
@@ -55,29 +60,29 @@ export function LeaderboardPage() {
           <Table>
             <TableHeader className="bg-white/5">
               <TableRow className="border-white/10 hover:bg-transparent">
-                <TableHead className="w-[100px] text-white/40 uppercase tracking-widest text-xs font-bold">Rank</TableHead>
-                <TableHead className="text-white/40 uppercase tracking-widest text-xs font-bold">Infiltrator</TableHead>
-                <TableHead className="text-right text-white/40 uppercase tracking-widest text-xs font-bold">Score</TableHead>
-                <TableHead className="text-right text-white/40 uppercase tracking-widest text-xs font-bold">Solves</TableHead>
+                <TableHead className="w-[100px] text-white/40 uppercase tracking-widest text-xs font-bold px-6">Rank</TableHead>
+                <TableHead className="text-white/40 uppercase tracking-widest text-xs font-bold px-6">Infiltrator</TableHead>
+                <TableHead className="text-right text-white/40 uppercase tracking-widest text-xs font-bold px-6">Score</TableHead>
+                <TableHead className="text-right text-white/40 uppercase tracking-widest text-xs font-bold px-6">Solves</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={4} className="text-center py-12 text-white/20 italic">Decrypting rank data...</TableCell></TableRow>
               ) : leaderboard?.map((entry) => (
-                <TableRow 
-                  key={entry.username} 
+                <TableRow
+                  key={entry.username}
                   className={cn(
                     "border-white/5 hover:bg-white/5 group transition-colors",
                     entry.username === savedUser.username && "bg-primary/10 hover:bg-primary/20"
                   )}
                 >
-                  <TableCell className="py-4">
+                  <TableCell className="py-4 px-6">
                     <div className="flex items-center justify-center">
                       {getRankIcon(entry.rank)}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-6">
                     <div className="flex items-center gap-3">
                       <Avatar className="size-8 border border-white/10">
                         <AvatarFallback className="bg-primary/20 text-primary text-xs">{entry.username.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -88,10 +93,10 @@ export function LeaderboardPage() {
                       )}>{entry.username}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right px-6">
                     <span className="font-mono text-xl font-bold text-white group-hover:text-primary transition-colors">{entry.score}</span>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right px-6">
                     <Badge variant="outline" className="font-mono text-white/40 border-white/10">{entry.solvedCount}</Badge>
                   </TableCell>
                 </TableRow>

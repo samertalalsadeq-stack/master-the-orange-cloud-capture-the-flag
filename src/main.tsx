@@ -16,7 +16,14 @@ import { ChallengesPage } from '@/pages/ChallengesPage'
 import { LeaderboardPage } from '@/pages/LeaderboardPage'
 import { AdminPage } from '@/pages/AdminPage'
 import { AppLayout } from '@/components/layout/AppLayout'
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 const router = createBrowserRouter([
   {
     path: "/",
