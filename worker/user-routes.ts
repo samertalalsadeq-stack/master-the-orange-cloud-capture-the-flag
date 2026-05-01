@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
 import { CTFUserEntity, ChallengeEntity } from "./entities";
-import { ok, bad, notFound, isStr } from './core-utils';
-import type { LeaderboardEntry, Challenge, CTFUser } from "@shared/types";
+import { ok, bad, notFound } from './core-utils';
+import type { LeaderboardEntry, Challenge } from "@shared/types";
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   // SEED ON FIRST ACCESS
   app.use('/api/*', async (c, next) => {
@@ -60,23 +60,19 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     return ok(c, leaderboard);
   });
   // --- ADMIN ROUTES ---
-  // List all users
   app.get('/api/users', async (c) => {
     const { items } = await CTFUserEntity.list(c.env);
     return ok(c, items);
   });
-  // Delete user
   app.delete('/api/admin/users/:id', async (c) => {
     const id = c.req.param('id');
     const success = await CTFUserEntity.delete(c.env, id);
     return ok(c, { success });
   });
-  // List full challenges
   app.get('/api/admin/challenges', async (c) => {
     const { items } = await ChallengeEntity.list(c.env);
     return ok(c, items);
   });
-  // Create challenge
   app.post('/api/admin/challenges', async (c) => {
     const data = await c.req.json() as Partial<Challenge>;
     if (!data.title || !data.flag) return bad(c, "Title and flag required");
@@ -91,13 +87,23 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     });
     return ok(c, challenge);
   });
-  // Delete challenge
+  app.put('/api/admin/challenges/:id', async (c) => {
+    const id = c.req.param('id');
+    const data = await c.req.json() as Partial<Challenge>;
+    const entity = new ChallengeEntity(c.env, id);
+    if (!await entity.exists()) return notFound(c);
+    const updated = await entity.mutate(s => ({
+      ...s,
+      ...data,
+      id: s.id // Ensure ID remains immutable
+    }));
+    return ok(c, updated);
+  });
   app.delete('/api/admin/challenges/:id', async (c) => {
     const id = c.req.param('id');
     const success = await ChallengeEntity.delete(c.env, id);
     return ok(c, { success });
   });
-  // Toggle Visibility
   app.post('/api/admin/challenges/:id/toggle', async (c) => {
     const id = c.req.param('id');
     const entity = new ChallengeEntity(c.env, id);

@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Shield, Eye, EyeOff, Plus, Trash2, Users, Database, AlertTriangle } from 'lucide-react';
+import { Shield, Eye, EyeOff, Plus, Trash2, Users, Database, Pencil } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import type { Challenge, CTFUser, ChallengeCategory } from '@shared/types';
 export function AdminPage() {
@@ -32,6 +32,8 @@ export function AdminPage() {
   const savedUser = JSON.parse(localStorage.getItem('ctf_user') || '{}') as CTFUser;
   const isAdmin = savedUser.isAdmin || savedUser.username === 'orange_admin';
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingChallenge, setEditingChallenge] = useState<Partial<Challenge> | null>(null);
   const [newChallenge, setNewChallenge] = useState<Partial<Challenge>>({
     title: '',
     description: '',
@@ -40,7 +42,6 @@ export function AdminPage() {
     flag: '',
     isVisible: true
   });
-  // Hooks must be at top level
   const { data: challenges, isLoading: challengesLoading } = useQuery<Challenge[]>({
     queryKey: ['admin-challenges'],
     queryFn: () => api<Challenge[]>('/api/admin/challenges'),
@@ -61,6 +62,18 @@ export function AdminPage() {
       toast.success("Mission deployed to the grid");
       setIsCreateOpen(false);
       setNewChallenge({ title: '', description: '', points: 100, category: 'ZTNA', flag: '', isVisible: true });
+    }
+  });
+  const editMutation = useMutation({
+    mutationFn: (data: Partial<Challenge>) => api(`/api/admin/challenges/${data.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-challenges'] });
+      toast.success("Mission records updated");
+      setIsEditOpen(false);
+      setEditingChallenge(null);
     }
   });
   const toggleMutation = useMutation({
@@ -126,25 +139,25 @@ export function AdminPage() {
                   <div className="grid grid-cols-2 gap-4 py-4">
                     <div className="col-span-2 space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-white/40">Title</label>
-                      <Input 
-                        value={newChallenge.title} 
+                      <Input
+                        value={newChallenge.title}
                         onChange={e => setNewChallenge({...newChallenge, title: e.target.value})}
-                        className="bg-white/5 border-white/10" 
+                        className="bg-white/5 border-white/10"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-white/40">Points</label>
-                      <Input 
+                      <Input
                         type="number"
-                        value={newChallenge.points} 
-                        onChange={e => setNewChallenge({...newChallenge, points: parseInt(e.target.value)})}
-                        className="bg-white/5 border-white/10" 
+                        value={newChallenge.points}
+                        onChange={e => setNewChallenge({...newChallenge, points: parseInt(e.target.value) || 0})}
+                        className="bg-white/5 border-white/10"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-white/40">Category</label>
-                      <Select 
-                        value={newChallenge.category} 
+                      <Select
+                        value={newChallenge.category}
                         onValueChange={v => setNewChallenge({...newChallenge, category: v as ChallengeCategory})}
                       >
                         <SelectTrigger className="bg-white/5 border-white/10">
@@ -162,24 +175,24 @@ export function AdminPage() {
                     </div>
                     <div className="col-span-2 space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-white/40">Flag</label>
-                      <Input 
+                      <Input
                         placeholder="CF{...}"
-                        value={newChallenge.flag} 
+                        value={newChallenge.flag}
                         onChange={e => setNewChallenge({...newChallenge, flag: e.target.value})}
-                        className="bg-white/5 border-white/10 font-mono" 
+                        className="bg-white/5 border-white/10 font-mono"
                       />
                     </div>
                     <div className="col-span-2 space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-white/40">Briefing (Markdown supported)</label>
-                      <Textarea 
-                        value={newChallenge.description} 
+                      <label className="text-xs font-bold uppercase tracking-widest text-white/40">Briefing</label>
+                      <Textarea
+                        value={newChallenge.description}
                         onChange={e => setNewChallenge({...newChallenge, description: e.target.value})}
-                        className="bg-white/5 border-white/10 h-32" 
+                        className="bg-white/5 border-white/10 h-32"
                       />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button 
+                    <Button
                       onClick={() => createMutation.mutate(newChallenge)}
                       className="w-full bg-primary hover:bg-primary/90"
                       disabled={createMutation.isPending || !newChallenge.title || !newChallenge.flag}
@@ -219,14 +232,25 @@ export function AdminPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => {
+                              setEditingChallenge(ch);
+                              setIsEditOpen(true);
+                            }}
+                            className="hover:bg-primary/20 text-primary"
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => toggleMutation.mutate(ch.id)}
                             className="hover:bg-primary/20 text-primary"
                           >
                             {ch.isVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => { if(confirm("Permanently scrub mission?")) deleteChallengeMutation.mutate(ch.id) }}
                             className="hover:bg-destructive/20 text-destructive"
                           >
@@ -274,9 +298,9 @@ export function AdminPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => { if(confirm("Erase all progress and remove operative?")) deleteUserMutation.mutate(u.id) }}
                             className="hover:bg-destructive/20 text-destructive"
                           >
@@ -292,6 +316,81 @@ export function AdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      {/* Edit Challenge Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="bg-card border-white/10 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-display uppercase italic">Update Mission Protocol</DialogTitle>
+            <DialogDescription className="text-white/40">Modify parameters for mission {editingChallenge?.id}</DialogDescription>
+          </DialogHeader>
+          {editingChallenge && (
+            <div className="grid grid-cols-2 gap-4 py-4">
+              <div className="col-span-2 space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40">Title</label>
+                <Input
+                  value={editingChallenge.title}
+                  onChange={e => setEditingChallenge({...editingChallenge, title: e.target.value})}
+                  className="bg-white/5 border-white/10"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40">Points</label>
+                <Input
+                  type="number"
+                  value={editingChallenge.points}
+                  onChange={e => setEditingChallenge({...editingChallenge, points: parseInt(e.target.value) || 0})}
+                  className="bg-white/5 border-white/10"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40">Category</label>
+                <Select
+                  value={editingChallenge.category}
+                  onValueChange={v => setEditingChallenge({...editingChallenge, category: v as ChallengeCategory})}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10">
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-white/10">
+                    <SelectItem value="ZTNA">ZTNA</SelectItem>
+                    <SelectItem value="SWG">SWG</SelectItem>
+                    <SelectItem value="CASB">CASB</SelectItem>
+                    <SelectItem value="WAAP">WAAP</SelectItem>
+                    <SelectItem value="Network">Network</SelectItem>
+                    <SelectItem value="DLP">DLP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2 space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40">Flag</label>
+                <Input
+                  placeholder="CF{...}"
+                  value={editingChallenge.flag}
+                  onChange={e => setEditingChallenge({...editingChallenge, flag: e.target.value})}
+                  className="bg-white/5 border-white/10 font-mono"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40">Briefing</label>
+                <Textarea
+                  value={editingChallenge.description}
+                  onChange={e => setEditingChallenge({...editingChallenge, description: e.target.value})}
+                  className="bg-white/5 border-white/10 h-32"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              onClick={() => editingChallenge && editMutation.mutate(editingChallenge)}
+              className="w-full bg-primary hover:bg-primary/90"
+              disabled={editMutation.isPending || !editingChallenge?.title || !editingChallenge?.flag}
+            >
+              Update Protocol
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Toaster richColors position="bottom-right" />
     </div>
   );
