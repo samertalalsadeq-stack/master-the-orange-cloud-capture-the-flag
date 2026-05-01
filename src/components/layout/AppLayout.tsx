@@ -22,15 +22,20 @@ export function AppLayout({ children, container = false, className, contentClass
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset className={className}>
-        <div className="absolute left-2 top-2 z-20">
-          <SidebarTrigger />
+        {/* Adjusted trigger placement to stay clear of top-left NavBackButton in page content */}
+        <div className="fixed left-4 bottom-4 md:absolute md:left-4 md:top-4 z-40">
+          <SidebarTrigger className="bg-primary/10 text-primary border border-primary/20 shadow-lg hover:bg-primary/20 transition-all rounded-full p-3 size-10" />
         </div>
         {container ? (
           <div className={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12" + (contentClassName ? ` ${contentClassName}` : "")}>
-            {children}
+            <div className="relative pt-6 md:pt-0">
+              {children}
+            </div>
           </div>
         ) : (
-          children
+          <div className="relative pt-12 md:pt-0">
+            {children}
+          </div>
         )}
       </SidebarInset>
     </SidebarProvider>

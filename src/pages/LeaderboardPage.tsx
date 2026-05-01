@@ -39,16 +39,16 @@ export function LeaderboardPage() {
   const ORANGE_PALETTE = ['#F38020', '#fa9d52', '#fcb884', '#ffd3b5', '#ffebe0'];
   return (
     <div className="space-y-10 animate-fade-in">
-      <div className="relative text-center space-y-4">
-        <div className="absolute right-0 top-0">
-          <NavBackButton />
+      <div className="space-y-6">
+        <NavBackButton />
+        <div className="relative text-center">
+          <h1 className="text-5xl font-display font-black uppercase italic tracking-tight text-white">
+            <span className="text-primary">Hall</span> of Fame
+          </h1>
+          <p className="text-white/40 text-lg max-w-2xl mx-auto mt-4">
+            The elite of the Orange Cloud. Only the fastest and most precise hackers make it to the top.
+          </p>
         </div>
-        <h1 className="text-5xl font-display font-black uppercase italic tracking-tight text-white">
-          <span className="text-primary">Hall</span> of Fame
-        </h1>
-        <p className="text-white/40 text-lg max-w-2xl mx-auto">
-          The elite of the Orange Cloud. Only the fastest and most precise hackers make it to the top.
-        </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>

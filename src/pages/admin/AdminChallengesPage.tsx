@@ -69,18 +69,18 @@ export function AdminChallengesPage() {
   if (isLoading) return <div className="flex items-center gap-2 text-primary font-mono animate-pulse p-8"><Loader2 className="animate-spin" /> DECRYPTING MISSION DATABASE...</div>;
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-display font-black uppercase italic tracking-tighter text-white">
-            Mission <span className="text-primary">Database</span>
-          </h1>
-          <p className="text-white/40 font-mono text-sm uppercase tracking-widest mt-1">Registry of Global Challenges</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <NavBackButton />
-        <Button onClick={() => setEditingChallenge({ category: 'ZTNA', points: 500, isVisible: true })} className="bg-primary hover:bg-primary/90 text-white font-bold h-12">
-          <Plus className="mr-2 size-5" /> NEW MISSION
-        </Button>
+      <div className="space-y-6">
+        <NavBackButton />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-4xl font-display font-black uppercase italic tracking-tighter text-white">
+              Mission <span className="text-primary">Database</span>
+            </h1>
+            <p className="text-white/40 font-mono text-sm uppercase tracking-widest mt-1">Registry of Global Challenges</p>
+          </div>
+          <Button onClick={() => setEditingChallenge({ category: 'ZTNA', points: 500, isVisible: true })} className="bg-primary hover:bg-primary/90 text-white font-bold h-12 shadow-[0_0_15px_rgba(243,128,32,0.3)]">
+            <Plus className="mr-2 size-5" /> NEW MISSION
+          </Button>
         </div>
       </div>
       <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -240,7 +240,7 @@ export function AdminChallengesPage() {
                   createMutation.mutate(editingChallenge as Challenge);
                 }
               }}
-              className="bg-primary hover:bg-primary/90 text-white"
+              className="bg-primary hover:bg-primary/90 text-white font-bold"
             >
               Commit Mission
             </Button>

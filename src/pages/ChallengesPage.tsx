@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CheckCircle2, 
-  Unlock, 
-  Trophy, 
-  Shield, 
-  Zap, 
-  Globe, 
-  Lock, 
-  Loader2, 
-  Server, 
-  Fingerprint, 
-  Search, 
-  ShieldCheck 
+import {
+  CheckCircle2,
+  Unlock,
+  Trophy,
+  Shield,
+  Zap,
+  Globe,
+  Lock,
+  Loader2,
+  Server,
+  Fingerprint,
+  Search,
+  ShieldCheck
 } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -96,20 +96,20 @@ export function ChallengesPage() {
   if (!currentUser) return <div className="flex items-center justify-center h-96 text-destructive font-mono">UNAUTHORIZED: SESSION EXPIRED</div>;
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-display font-black uppercase tracking-tight text-white mb-2 italic">The <span className="text-primary">Arena</span></h1>
-          <p className="text-white/50">Breach the perimeters of the Cloudflare One ecosystem.</p>
-        </div>
-        <div className="flex items-center gap-4 ml-auto md:ml-0">
-          <NavBackButton />
-        <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(243,128,32,0.1)]">
-          <Trophy className="size-6 text-primary" />
-          <div className="font-mono">
-            <div className="text-xs text-white/40 uppercase tracking-widest">Global Score</div>
-            <div className="text-2xl font-bold text-white">{currentUser.score} <span className="text-sm text-white/40 ml-1">PTS</span></div>
+      <div className="space-y-6">
+        <NavBackButton />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-4xl font-display font-black uppercase tracking-tight text-white mb-2 italic">The <span className="text-primary">Arena</span></h1>
+            <p className="text-white/50">Breach the perimeters of the Cloudflare One ecosystem.</p>
           </div>
-        </div>
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(243,128,32,0.1)]">
+            <Trophy className="size-6 text-primary" />
+            <div className="font-mono">
+              <div className="text-xs text-white/40 uppercase tracking-widest">Global Score</div>
+              <div className="text-2xl font-bold text-white">{currentUser.score} <span className="text-sm text-white/40 ml-1">PTS</span></div>
+            </div>
+          </div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -154,7 +154,7 @@ export function ChallengesPage() {
                         "w-full font-bold transition-all h-11",
                         isSolved
                           ? "bg-white/5 text-white/40 hover:bg-white/10 border border-white/5"
-                          : "bg-primary text-white shadow-[0_0_15px_rgba(243,128,32,0.3)] hover:shadow-[0_0_25px_rgba(243,128,32,0.5)]"
+                          : "bg-primary text-white shadow-[0_0_15px_rgba(243,128,32,0.4)] hover:shadow-[0_0_25px_rgba(243,128,32,0.6)]"
                       )}
                     >
                       {isSolved ? "MISSION ARCHIVE" : "INITIATE MISSION"}

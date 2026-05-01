@@ -10,6 +10,8 @@ interface NavBackButtonProps {
 export function NavBackButton({ className, fallbackPath = '/arena' }: NavBackButtonProps) {
   const navigate = useNavigate();
   const handleBack = () => {
+    // If the history stack has more than just the initial entry, go back.
+    // Otherwise, use the fallback.
     if (window.history.length > 2) {
       navigate(-1);
     } else {
@@ -22,7 +24,7 @@ export function NavBackButton({ className, fallbackPath = '/arena' }: NavBackBut
       size="sm"
       onClick={handleBack}
       className={cn(
-        "gap-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all hover:scale-105 active:scale-95 group",
+        "gap-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all hover:scale-105 active:scale-95 group p-0 h-auto hover:bg-transparent",
         className
       )}
     >

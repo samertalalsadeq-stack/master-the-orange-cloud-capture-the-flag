@@ -65,24 +65,24 @@ export function AdminUsersPage() {
   if (isLoading) return <div className="text-primary font-mono animate-pulse">ACCESSING OPERATIVE DATABASE...</div>;
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-display font-black uppercase italic tracking-tighter text-white">
-            Operative <span className="text-primary">Management</span>
-          </h1>
-          <p className="text-white/40 font-mono text-sm uppercase tracking-widest mt-1">Command & Control Center</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <NavBackButton />
-        <div className="relative w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
-          <Input
-            placeholder="Search Alias..."
-            className="bg-white/5 border-white/10 pl-10 focus:ring-primary"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <div className="space-y-6">
+        <NavBackButton />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-4xl font-display font-black uppercase italic tracking-tighter text-white">
+              Operative <span className="text-primary">Management</span>
+            </h1>
+            <p className="text-white/40 font-mono text-sm uppercase tracking-widest mt-1">Command & Control Center</p>
+          </div>
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
+            <Input
+              placeholder="Search Alias..."
+              className="bg-white/5 border-white/10 pl-10 focus:ring-primary"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
       </div>
       <Card className="bg-card border-white/10 overflow-hidden shadow-2xl">
