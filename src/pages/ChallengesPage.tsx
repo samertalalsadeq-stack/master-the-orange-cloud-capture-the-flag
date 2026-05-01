@@ -101,7 +101,7 @@ export function ChallengesPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-4xl font-display font-black uppercase tracking-tight text-white mb-2 italic">The <span className="text-primary">Arena</span></h1>
-            <p className="text-white/50">Learn how to master Cloudflare One.</p>
+            <p className="text-white/50">Learn how to master the Orange Cloud.</p>
           </div>
           <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(243,128,32,0.1)]">
             <Trophy className="size-6 text-primary" />
@@ -204,7 +204,7 @@ export function ChallengesPage() {
                     {isSubmitting ? <Loader2 className="animate-spin" /> : "EXFILTRATE FLAG"}
                   </Button>
                 ) : (
-                  <div className="w-full p-4 bg-green-500/10 rounded-lg text-green-500 border border-green-500/20 text-center font-bold font-mono tracking-widest">
+                  <div className="w-full p-6 bg-green-500/10 rounded-lg text-green-500 border border-green-500/20 text-center font-bold font-mono tracking-[0.2em] uppercase">
                     MISSION COMPLETE: DATA SECURED
                   </div>
                 )}
