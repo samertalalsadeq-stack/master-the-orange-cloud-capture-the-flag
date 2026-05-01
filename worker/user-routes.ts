@@ -3,18 +3,16 @@ import type { Env } from './core-utils';
 import { CTFUserEntity, ChallengeEntity } from "./entities";
 import { ok, bad, notFound } from './core-utils';
 import type { LeaderboardEntry, Challenge, CTFUser } from "@shared/types";
+function hexToBytes(hex: string): Uint8Array {
+  return Uint8Array.from(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
+}
+
 async function hashPassword(password: string, saltStr?: string): Promise<string> {
   const encoder = new TextEncoder();
-  const salt = saltStr ? encoder.encode(saltStr) : crypto.getRandomValues(new Uint8Array(16));
-  const baseKey = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits", "deriveKey"]);
-  const derivedKey = await crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
-    baseKey,
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"]
-  );
-  const exported = await crypto.subtle.exportKey("raw", derivedKey);
+  const salt = saltStr ? hexToBytes(saltStr) : crypto.getRandomValues(new Uint8Array(16));
+  const baseKey = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const derivedBits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, baseKey, 256);
+  const exported = new Uint8Array(derivedBits);
   const hashHex = Array.from(new Uint8Array(exported)).map(b => b.toString(16).padStart(2, '0')).join('');
   const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
   return `${saltHex}:${hashHex}`;

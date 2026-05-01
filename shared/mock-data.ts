@@ -1,4 +1,10 @@
 import type { CTFUser, Challenge } from './types';
+/*
+Demo login credentials:
+- orange_admin / admin123 (email: admin@cloudflare.com)
+- flare_runner / player123 (email: flare_runner@example.com)
+*/
+
 export const MOCK_USERS: CTFUser[] = [
   {
     id: 'admin-id',
@@ -8,7 +14,7 @@ export const MOCK_USERS: CTFUser[] = [
     solvedChallenges: [],
     isAdmin: true,
     isApproved: true,
-    passwordHash: '00000000000000000000000000000000:mock_hash_admin',
+    passwordHash: '00000000000000000000000000000000:510c749b88d3c1a5dc2d171b17851ef7b3ad2a526ca12fe8d4784776cf7b8ecd',
     joinedAt: Date.now()
   },
   {
@@ -19,7 +25,7 @@ export const MOCK_USERS: CTFUser[] = [
     solvedChallenges: ['ch1'],
     isAdmin: false,
     isApproved: true,
-    passwordHash: '00000000000000000000000000000000:mock_hash_player',
+    passwordHash: '00000000000000000000000000000000:0663066b1c322e93af932b8d96d0262dd3c15dcf856c5bb212aa8b35a7bfd5db',
     joinedAt: Date.now() - 86400000
   }
 ];
