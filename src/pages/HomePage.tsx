@@ -5,7 +5,7 @@ import { Sparkles, Terminal, ShieldAlert, Loader2, ArrowRight } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { api } from '@/lib/api-client';
 import { useUser } from '@/hooks/use-user';
 import type { CTFUser } from '@shared/types';
@@ -83,15 +83,9 @@ export function HomePage() {
                   Return to Arena <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <div className="text-center">
-                  <button 
-                    onClick={() => {
-                      // Allow re-login by clearing current state if they want a different alias
-                      // but keeping it simple for UX: just a logout button
-                    }}
-                    className="text-white/30 hover:text-white/60 text-xs font-mono uppercase tracking-widest transition-colors"
-                  >
-                    Not {user.username}? Click Sidebar to Sign Out
-                  </button>
+                  <span className="text-white/30 text-xs font-mono uppercase tracking-widest">
+                    Use the sidebar to sign out
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -139,7 +133,6 @@ export function HomePage() {
           </Card>
         )}
       </motion.div>
-      <Toaster richColors position="top-center" />
     </div>
   );
 }

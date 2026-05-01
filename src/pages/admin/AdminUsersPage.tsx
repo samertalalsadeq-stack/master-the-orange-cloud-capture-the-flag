@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import type { CTFUser } from '@shared/types';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/use-user';
@@ -17,12 +17,13 @@ export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<CTFUser | null>(null);
-  const { user: currentUser, updateUser } = useUser();
+  const { user: currentUser, isAdmin, updateUser } = useUser();
   const { data: users, isLoading } = useQuery<CTFUser[]>({
     queryKey: ['admin-users'],
     queryFn: () => api<CTFUser[]>('/api/admin/users', {
       headers: { 'X-User-ID': currentUser?.id || '' }
-    })
+    }),
+    enabled: !!currentUser?.id && isAdmin
   });
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api(`/api/admin/users/${id}`, {
@@ -45,14 +46,15 @@ export function AdminUsersPage() {
     }
   });
   const updateMutation = useMutation({
-    mutationFn: (user: CTFUser) => api<CTFUser>(`/api/admin/users/${user.id}`, {
+    mutationFn: (userData: CTFUser) => api<CTFUser>(`/api/admin/users/${userData.id}`, {
       method: 'PUT',
       headers: { 'X-User-ID': currentUser?.id || '', 'Content-Type': 'application/json' },
-      body: JSON.stringify(user)
+      body: JSON.stringify(userData)
     }),
     onSuccess: (updated: CTFUser) => {
       toast.success("Operative data synchronized");
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      // If we updated ourselves, reflect changes in session
       if (currentUser && updated.id === currentUser.id) {
         updateUser(updated);
       }
@@ -62,7 +64,7 @@ export function AdminUsersPage() {
   const filteredUsers = users?.filter(u =>
     u.username.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => b.score - a.score);
-  if (isLoading) return <div className="text-primary font-mono animate-pulse">ACCESSING OPERATIVE DATABASE...</div>;
+  if (!isAdmin) return <div className="text-destructive font-mono p-8">RESTRICTED SECTOR: ACCESS DENIED</div>;
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="space-y-6">
@@ -78,7 +80,7 @@ export function AdminUsersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
             <Input
               placeholder="Search Alias..."
-              className="bg-white/5 border-white/10 pl-10 focus:ring-primary"
+              className="bg-white/5 border-white/10 pl-10 h-12 focus:ring-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -97,7 +99,11 @@ export function AdminUsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers?.map((u) => (
+            {isLoading ? (
+               <TableRow>
+                 <TableCell colSpan={5} className="text-center py-8 font-mono text-primary animate-pulse">ACCESSING OPERATIVE DATABASE...</TableCell>
+               </TableRow>
+            ) : filteredUsers?.map((u) => (
               <TableRow key={u.id} className="border-white/5 hover:bg-white/5 transition-colors">
                 <TableCell className="px-6">
                   <div className="flex items-center gap-3">
@@ -167,7 +173,6 @@ export function AdminUsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Toaster richColors position="top-right" />
     </div>
   );
 }

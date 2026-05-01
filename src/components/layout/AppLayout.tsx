@@ -13,27 +13,34 @@ export function AppLayout({ children, container = false, className, contentClass
   const navigate = useNavigate();
   const { isAuthenticated } = useUser();
   useEffect(() => {
-    // Session guard: If cleared in another tab, redirect immediately
+    // Session guard: Check if authenticated. If not, redirect.
     if (!isAuthenticated) {
-      navigate('/');
+      navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+  // Prevent flicker during redirect
+  if (!isAuthenticated) {
+    return <div className="min-h-screen bg-black" />;
+  }
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
-      <SidebarInset className={className}>
-        {/* Adjusted trigger placement to stay clear of top-left NavBackButton in page content */}
-        <div className="fixed left-4 bottom-4 md:absolute md:left-4 md:top-4 z-40">
-          <SidebarTrigger className="bg-primary/10 text-primary border border-primary/20 shadow-lg hover:bg-primary/20 transition-all rounded-full p-3 size-10" />
+      <SidebarInset className={cn("bg-black min-h-screen", className)}>
+        {/* Trigger stays clear of page content */}
+        <div className="fixed left-4 bottom-4 md:absolute md:left-6 md:top-8 z-40">
+          <SidebarTrigger className="bg-primary/10 text-primary border border-primary/20 shadow-lg hover:bg-primary/20 transition-all rounded-full p-3 size-12" />
         </div>
         {container ? (
-          <div className={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12" + (contentClassName ? ` ${contentClassName}` : "")}>
-            <div className="relative pt-6 md:pt-0">
+          <div className={cn(
+            "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16",
+            contentClassName
+          )}>
+            <div className="relative pt-12 md:pt-4">
               {children}
             </div>
           </div>
         ) : (
-          <div className="relative pt-12 md:pt-0">
+          <div className="relative pt-16 md:pt-4">
             {children}
           </div>
         )}
@@ -41,3 +48,5 @@ export function AppLayout({ children, container = false, className, contentClass
     </SidebarProvider>
   );
 }
+// Minimal utility import for the file
+import { cn } from "@/lib/utils";

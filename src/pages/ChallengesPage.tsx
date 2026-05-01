@@ -21,7 +21,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { NavBackButton } from '@/components/NavBackButton';
 import confetti from 'canvas-confetti';
 import type { Challenge, SubmissionResponse, ChallengeCategory } from '@shared/types';
@@ -213,7 +213,6 @@ export function ChallengesPage() {
           </div>
         </DialogContent>
       </Dialog>
-      <Toaster richColors position="top-center" />
     </div>
   );
 }

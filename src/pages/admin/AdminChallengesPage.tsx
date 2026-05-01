@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import type { Challenge, ChallengeCategory } from '@shared/types';
 import { useUser } from '@/hooks/use-user';
 import { NavBackButton } from '@/components/NavBackButton';
@@ -66,7 +66,6 @@ export function AdminChallengesPage() {
     return matchesSearch && matchesCat;
   });
   if (!isAdmin) return <div className="text-destructive font-mono p-8">UNAUTHORIZED: RESTRICTED SECTOR</div>;
-  if (isLoading) return <div className="flex items-center gap-2 text-primary font-mono animate-pulse p-8"><Loader2 className="animate-spin" /> DECRYPTING MISSION DATABASE...</div>;
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="space-y-6">
@@ -122,7 +121,15 @@ export function AdminChallengesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredChallenges?.map((ch) => (
+              {isLoading ? (
+                 <TableRow>
+                   <TableCell colSpan={5} className="text-center py-8">
+                     <div className="flex items-center justify-center gap-2 text-primary font-mono animate-pulse">
+                       <Loader2 className="animate-spin size-4" /> DECRYPTING MISSION DATABASE...
+                     </div>
+                   </TableCell>
+                 </TableRow>
+              ) : filteredChallenges?.map((ch) => (
                 <TableRow key={ch.id} className="border-white/5 hover:bg-white/5 transition-colors">
                   <TableCell className="px-6 font-bold text-white text-lg min-w-[200px]">{ch.title}</TableCell>
                   <TableCell className="px-6">
@@ -247,7 +254,6 @@ export function AdminChallengesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Toaster richColors position="top-right" />
     </div>
   );
 }
