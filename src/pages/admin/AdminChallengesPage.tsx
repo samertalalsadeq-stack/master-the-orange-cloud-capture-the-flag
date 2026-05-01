@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Database, Plus, Search, Edit2, Trash2, Eye, EyeOff, Tag } from 'lucide-react';
+import { Database, Plus, Search, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { toast, Toaster } from 'sonner';
 import type { Challenge, ChallengeCategory, CTFUser } from '@shared/types';
 export function AdminChallengesPage() {
@@ -17,7 +18,7 @@ export function AdminChallengesPage() {
   const [editingChallenge, setEditingChallenge] = useState<Partial<Challenge> | null>(null);
   const currentUser = useMemo(() => {
     const stored = localStorage.getItem('ctf_user');
-    return stored ? JSON.parse(stored) as CTFUser : null;
+    return stored ? (JSON.parse(stored) as CTFUser) : null;
   }, []);
   const { data: challenges, isLoading } = useQuery<Challenge[]>({
     queryKey: ['admin-challenges'],
@@ -81,8 +82,8 @@ export function AdminChallengesPage() {
       <div className="flex gap-4 items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
-          <Input 
-            placeholder="Filter Missions..." 
+          <Input
+            placeholder="Filter Missions..."
             className="bg-white/5 border-white/10 pl-10 h-12"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -99,6 +100,8 @@ export function AdminChallengesPage() {
             <SelectItem value="WAAP">WAAP</SelectItem>
             <SelectItem value="Network">Network</SelectItem>
             <SelectItem value="DLP">DLP</SelectItem>
+            <SelectItem value="CASB">CASB</SelectItem>
+            <SelectItem value="Identity">Identity</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -118,7 +121,9 @@ export function AdminChallengesPage() {
               <TableRow key={ch.id} className="border-white/5 hover:bg-white/5 transition-colors">
                 <TableCell className="px-6 font-bold text-white text-lg">{ch.title}</TableCell>
                 <TableCell className="px-6">
-                  <Badge variant="outline" className="border-primary/20 text-primary font-mono text-[10px] uppercase">{ch.category}</Badge>
+                  <Badge variant="outline" className="border-primary/20 text-primary font-mono text-[10px] uppercase">
+                    {ch.category}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-right px-6 font-mono font-bold text-primary">{ch.points}</TableCell>
                 <TableCell className="text-right px-6">
@@ -147,41 +152,41 @@ export function AdminChallengesPage() {
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="col-span-2 space-y-2">
               <label className="text-xs font-bold text-white/40 uppercase">Mission Title</label>
-              <Input 
-                value={editingChallenge?.title || ''} 
+              <Input
+                value={editingChallenge?.title || ''}
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, title: e.target.value })}
                 className="bg-white/5 border-white/10"
               />
             </div>
             <div className="col-span-2 space-y-2">
               <label className="text-xs font-bold text-white/40 uppercase">Intel / Description</label>
-              <Input 
-                value={editingChallenge?.description || ''} 
+              <Input
+                value={editingChallenge?.description || ''}
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, description: e.target.value })}
                 className="bg-white/5 border-white/10"
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-white/40 uppercase">Flag (CF{`{...}`})</label>
-              <Input 
-                value={editingChallenge?.flag || ''} 
+              <Input
+                value={editingChallenge?.flag || ''}
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, flag: e.target.value })}
                 className="bg-white/5 border-white/10 font-mono text-primary"
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-white/40 uppercase">Points Value</label>
-              <Input 
+              <Input
                 type="number"
-                value={editingChallenge?.points || 0} 
+                value={editingChallenge?.points || 0}
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, points: parseInt(e.target.value) || 0 })}
                 className="bg-white/5 border-white/10"
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-white/40 uppercase">Category</label>
-              <Select 
-                value={editingChallenge?.category} 
+              <Select
+                value={editingChallenge?.category}
                 onValueChange={(val) => setEditingChallenge({ ...editingChallenge, category: val as ChallengeCategory })}
               >
                 <SelectTrigger className="bg-white/5 border-white/10">
@@ -193,14 +198,16 @@ export function AdminChallengesPage() {
                   <SelectItem value="WAAP">WAAP</SelectItem>
                   <SelectItem value="Network">Network</SelectItem>
                   <SelectItem value="DLP">DLP</SelectItem>
+                  <SelectItem value="CASB">CASB</SelectItem>
+                  <SelectItem value="Identity">Identity</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center gap-2 pt-8">
-              <input 
-                type="checkbox" 
-                id="isVisible" 
-                checked={editingChallenge?.isVisible ?? true} 
+              <input
+                type="checkbox"
+                id="isVisible"
+                checked={editingChallenge?.isVisible ?? true}
                 onChange={(e) => setEditingChallenge({ ...editingChallenge, isVisible: e.target.checked })}
               />
               <label htmlFor="isVisible" className="text-sm font-medium">Mission Active</label>
@@ -208,7 +215,7 @@ export function AdminChallengesPage() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setEditingChallenge(null)}>Cancel</Button>
-            <Button 
+            <Button
               onClick={() => editingChallenge?.id ? updateMutation.mutate(editingChallenge) : createMutation.mutate(editingChallenge as Challenge)}
               className="bg-primary hover:bg-primary/90 text-white"
             >

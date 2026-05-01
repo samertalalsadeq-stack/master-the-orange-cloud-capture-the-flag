@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Search, RefreshCw, Trash2, Edit2, ShieldCheck, Terminal } from 'lucide-react';
+import { Users, Search, RefreshCw, Trash2, Edit2, Terminal } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,11 @@ export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<CTFUser | null>(null);
-  const currentUser = useMemo(() => {
+  const getStoredUser = (): CTFUser | null => {
     const stored = localStorage.getItem('ctf_user');
-    return stored ? JSON.parse(stored) as CTFUser : null;
-  }, []);
+    return stored ? (JSON.parse(stored) as CTFUser) : null;
+  };
+  const currentUser = getStoredUser();
   const { data: users, isLoading } = useQuery<CTFUser[]>({
     queryKey: ['admin-users'],
     queryFn: () => api<CTFUser[]>('/api/admin/users', {
@@ -51,13 +52,17 @@ export function AdminUsersPage() {
       headers: { 'X-User-ID': currentUser?.id || '', 'Content-Type': 'application/json' },
       body: JSON.stringify(user)
     }),
-    onSuccess: () => {
+    onSuccess: (updated) => {
       toast.success("Operative data synchronized");
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      // If we updated ourselves, update local session too
+      if (currentUser && updated.id === currentUser.id) {
+        localStorage.setItem('ctf_user', JSON.stringify(updated));
+      }
       setEditingUser(null);
     }
   });
-  const filteredUsers = users?.filter(u => 
+  const filteredUsers = users?.filter(u =>
     u.username.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => b.score - a.score);
   if (isLoading) return <div className="text-primary font-mono animate-pulse">ACCESSING OPERATIVE DATABASE...</div>;
@@ -72,8 +77,8 @@ export function AdminUsersPage() {
         </div>
         <div className="relative w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
-          <Input 
-            placeholder="Search Alias..." 
+          <Input
+            placeholder="Search Alias..."
             className="bg-white/5 border-white/10 pl-10 focus:ring-primary"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -137,18 +142,18 @@ export function AdminUsersPage() {
             <div className="space-y-6 py-4">
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-widest font-bold text-white/40">Manual Score Override</label>
-                <Input 
-                  type="number" 
-                  value={editingUser.score} 
+                <Input
+                  type="number"
+                  value={editingUser.score}
                   onChange={(e) => setEditingUser({ ...editingUser, score: parseInt(e.target.value) || 0 })}
                   className="bg-white/5 border-white/10"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  id="isAdmin" 
-                  checked={editingUser.isAdmin} 
+                <input
+                  type="checkbox"
+                  id="isAdmin"
+                  checked={editingUser.isAdmin}
                   onChange={(e) => setEditingUser({ ...editingUser, isAdmin: e.target.checked })}
                   className="accent-primary"
                 />

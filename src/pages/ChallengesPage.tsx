@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Unlock, Trophy, Shield, Zap, Globe, Lock } from 'lucide-react';
@@ -17,7 +17,8 @@ export function ChallengesPage() {
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [flag, setFlag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const currentUser = useMemo(() => {
+  // Derived from localStorage to ensure reactive updates after mutations
+  const getStoredUser = (): CTFUser | null => {
     try {
       const stored = localStorage.getItem('ctf_user');
       if (!stored) return null;
@@ -31,7 +32,8 @@ export function ChallengesPage() {
       console.error("Failed to parse user session", e);
       return null;
     }
-  }, []);
+  };
+  const currentUser = getStoredUser();
   const { data: challenges, isLoading } = useQuery<Challenge[]>({
     queryKey: ['challenges'],
     queryFn: () => api<Challenge[]>('/api/challenges'),
@@ -46,11 +48,11 @@ export function ChallengesPage() {
     },
     onSuccess: (data) => {
       if (data.correct && selectedChallenge && currentUser) {
-        confetti({ 
-          particleCount: 150, 
-          spread: 80, 
-          origin: { y: 0.6 }, 
-          colors: ['#F38020', '#FFFFFF', '#1E1E1E'] 
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#F38020', '#FFFFFF', '#1E1E1E']
         });
         toast.success(data.message);
         const updatedUser: CTFUser = {

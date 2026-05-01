@@ -1,26 +1,23 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, Medal, Crown, Target, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { Trophy, Medal, Crown, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie
 } from 'recharts';
 import type { LeaderboardEntry, CTFUser } from '@shared/types';
 import { cn } from '@/lib/utils';
 export function LeaderboardPage() {
-  const currentUser = useMemo(() => {
-    try {
-      const stored = localStorage.getItem('ctf_user');
-      return stored ? (JSON.parse(stored) as CTFUser) : null;
-    } catch (e) {
-      return null;
-    }
-  }, []);
+  const getStoredUser = (): CTFUser | null => {
+    const stored = localStorage.getItem('ctf_user');
+    return stored ? (JSON.parse(stored) as CTFUser) : null;
+  };
+  const currentUser = getStoredUser();
   const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['leaderboard'],
     queryFn: () => api<LeaderboardEntry[]>('/api/leaderboard'),
@@ -57,22 +54,26 @@ export function LeaderboardPage() {
             <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">Top Hackers</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] pt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats?.topScores}>
-                <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis hide />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
-                  itemStyle={{ color: '#F38020' }}
-                  cursor={{ fill: 'rgba(243, 128, 32, 0.1)' }}
-                />
-                <Bar dataKey="score" fill="#F38020" radius={[4, 4, 0, 0]}>
-                  {stats?.topScores.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {stats?.topScores ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.topScores}>
+                  <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis hide />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                    itemStyle={{ color: '#F38020' }}
+                    cursor={{ fill: 'rgba(243, 128, 32, 0.1)' }}
+                  />
+                  <Bar dataKey="score" fill="#F38020" radius={[4, 4, 0, 0]}>
+                    {stats.topScores.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-white/20 font-mono text-sm">LOADING ANALYTICS...</div>
+            )}
           </CardContent>
         </Card>
         <Card className="bg-card border-white/10 shadow-xl overflow-hidden">
@@ -81,27 +82,31 @@ export function LeaderboardPage() {
             <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">Mission Distribution</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] pt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats?.categories}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {stats?.categories.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
-                  itemStyle={{ color: '#F38020' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {stats?.categories ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={stats.categories}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {stats.categories.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                    itemStyle={{ color: '#F38020' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-white/20 font-mono text-sm">COMPILING STATS...</div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -132,10 +137,8 @@ export function LeaderboardPage() {
                         isMe && "bg-primary/10 hover:bg-primary/20"
                       )}
                     >
-                      <TableCell className="py-4 px-6">
-                        <div className="flex items-center justify-center">
-                          {getRankIcon(entry.rank)}
-                        </div>
+                      <TableCell className="py-4 px-6 text-center">
+                        {getRankIcon(entry.rank)}
                       </TableCell>
                       <TableCell className="px-6">
                         <div className="flex items-center gap-3">
