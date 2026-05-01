@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Footer } from "@/components/layout/Footer";
 import { useUser } from "@/hooks/use-user";
 import { ShieldAlert, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -60,17 +61,20 @@ export function AppLayout({ children, container = false, className, contentClass
         <div className="fixed left-4 top-4 md:left-6 md:top-6 z-50">
           <SidebarTrigger className="bg-primary/10 text-primary border border-primary/20 shadow-lg hover:bg-primary/20 transition-all rounded-full p-3 size-12" />
         </div>
-        {/* Main Content Area with sufficient top padding to clear the trigger and headers */}
-        <main className="flex-1 w-full">
-          {container ? (
-            <div className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-24", contentClassName)}>
-              {children}
-            </div>
-          ) : (
-            <div className={cn("pt-20 md:pt-24", contentClassName)}>
-              {children}
-            </div>
-          )}
+        {/* Main Content Area - Use flex-1 to push footer down */}
+        <main className="flex-1 w-full flex flex-col">
+          <div className="flex-1">
+            {container ? (
+              <div className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-24", contentClassName)}>
+                {children}
+              </div>
+            ) : (
+              <div className={cn("pt-20 md:pt-24", contentClassName)}>
+                {children}
+              </div>
+            )}
+          </div>
+          <Footer />
         </main>
       </SidebarInset>
     </SidebarProvider>
