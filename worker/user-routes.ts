@@ -3,10 +3,10 @@ import type { Env } from './core-utils';
 import { CTFUserEntity, ChallengeEntity } from "./entities";
 import { ok, bad, notFound } from './core-utils';
 import type { LeaderboardEntry, Challenge, CTFUser } from "@shared/types";
+// Utility for hashing and stripping sensitive fields
 function hexToBytes(hex: string): Uint8Array {
   return Uint8Array.from(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
 }
-
 async function hashPassword(password: string, saltStr?: string): Promise<string> {
   const encoder = new TextEncoder();
   const salt = saltStr ? hexToBytes(saltStr) : crypto.getRandomValues(new Uint8Array(16));
@@ -23,38 +23,48 @@ async function verifyPassword(password: string, stored: string): Promise<boolean
   const reHash = await hashPassword(password, saltHex);
   return reHash === stored;
 }
+/**
+ * Strips password hashes and other internal metadata before sending to client
+ */
 function stripSensitive(user: CTFUser) {
   const { passwordHash, ...safe } = user;
   return safe;
 }
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
+  // Ensure seed data exists on every request (DO is persistent but initial bootstrap is needed)
   app.use('/api/*', async (c, next) => {
     await ChallengeEntity.ensureSeed(c.env);
     await CTFUserEntity.ensureSeed(c.env);
     await next();
   });
+  // Admin Security Guard - Strict enforcement of the X-User-ID header and isAdmin state
   const adminGuard = async (c: any, next: any) => {
     const userId = c.req.header('X-User-ID');
-    if (!userId) return bad(c, "Authentication required");
+    if (!userId) return bad(c, "Authentication required for secure gateway access.");
     const userEntity = new CTFUserEntity(c.env, userId);
-    if (!await userEntity.exists()) return bad(c, "Invalid user");
+    if (!await userEntity.exists()) return bad(c, "Identity verification failed.");
     const user = await userEntity.getState();
-    if (!user.isAdmin) return bad(c, "Forbidden: Administrative access required");
+    if (!user.isAdmin) {
+      console.warn(`[SECURITY WARNING] Unauthorized admin access attempt by ${user.username} (${userId})`);
+      return bad(c, "FORBIDDEN: Administrative clearance required for this sector.");
+    }
     await next();
   };
+  // --- PUBLIC ENDPOINTS ---
   app.post('/api/auth', async (c) => {
     const { username, email, password } = await c.req.json() as { username: string; email: string; password?: string };
-    if (!username || username.length < 3) return bad(c, "Invalid username");
-    if (!email || !email.includes('@')) return bad(c, "Invalid email address");
-    if (!password || password.length < 6) return bad(c, "Password must be at least 6 characters");
+    if (!username || username.length < 3) return bad(c, "Alias must be at least 3 characters.");
+    if (!email || !email.includes('@')) return bad(c, "Valid Cloudflare identity (email) required.");
+    if (!password || password.length < 6) return bad(c, "Security token must be at least 6 characters.");
     const { items: users } = await CTFUserEntity.list(c.env);
     let user = users.find(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase());
     if (user) {
       const isValid = await verifyPassword(password, user.passwordHash);
-      if (!isValid) return bad(c, "Invalid credentials");
+      if (!isValid) return bad(c, "Invalid credentials provided.");
       return ok(c, stripSensitive(user));
     }
-    const isAdmin = username.toLowerCase().includes('admin') || email.toLowerCase().includes('admin');
+    // Auto-admin for certain usernames or emails (simulation logic)
+    const isAdmin = username.toLowerCase().includes('admin') || email.toLowerCase().includes('cloudflare.com');
     const hash = await hashPassword(password);
     const newUser = await CTFUserEntity.create(c.env, {
       id: crypto.randomUUID(),
@@ -63,24 +73,24 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       score: 0,
       solvedChallenges: [],
       isAdmin,
-      isApproved: isAdmin,
+      isApproved: isAdmin, // Admins are auto-approved
       passwordHash: hash,
       joinedAt: Date.now()
     });
-    console.log(`[EMAIL SIMULATION] To: samer@cloudflare.com | Subject: New Operative Registration | Body: User ${username} (${email}) has registered and is awaiting approval.`);
+    console.log(`[OPERATIVE REGISTRY] New Infiltrator: ${username} (${email}). Approval status: ${newUser.isApproved}`);
     return ok(c, stripSensitive(newUser));
   });
-
   app.get('/api/me', async (c) => {
     const userId = c.req.header('X-User-ID');
-    if(!userId) return bad(c, 'Authentication required');
+    if(!userId) return bad(c, 'Identity signature missing.');
     const userEntity = new CTFUserEntity(c.env, userId);
-    if(!await userEntity.exists()) return bad(c, 'User not found');
+    if(!await userEntity.exists()) return bad(c, 'Operative not found in registry.');
     const user = await userEntity.getState();
     return ok(c, stripSensitive(user));
   });
   app.get('/api/challenges', async (c) => {
     const { items: challenges } = await ChallengeEntity.list(c.env);
+    // CRITICAL: Strip flags before sending to players
     const stripped = challenges
       .filter(ch => ch.isVisible)
       .map(({ flag, ...rest }) => rest);
@@ -89,7 +99,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
   app.post('/api/challenges/submit', async (c) => {
     const { userId, challengeId, flag } = await c.req.json() as { userId: string; challengeId: string; flag: string };
     const userEntity = new CTFUserEntity(c.env, userId);
-    if (!await userEntity.exists()) return notFound(c, "User not found");
+    if (!await userEntity.exists()) return notFound(c, "Operative record not found.");
     const result = await userEntity.submitFlag(c.env, challengeId, flag);
     const updatedUser = await userEntity.getState();
     return ok(c, { ...result, newScore: updatedUser.score });
@@ -125,6 +135,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       .map(u => ({ name: u.username, score: u.score }));
     return ok(c, { categories, topScores });
   });
+  // --- ADMINISTRATIVE SECTOR ---
   app.use('/api/admin/*', adminGuard);
   app.get('/api/admin/users', async (c) => {
     const { items } = await CTFUserEntity.list(c.env);
@@ -134,15 +145,8 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const id = c.req.param('id');
     const data = await c.req.json();
     const userEntity = new CTFUserEntity(c.env, id);
-    if (!await userEntity.exists()) return notFound(c, "User not found");
+    if (!await userEntity.exists()) return notFound(c, "Operative not found.");
     const updated = await userEntity.mutate(s => ({ ...s, ...data, id: s.id }));
-    return ok(c, stripSensitive(updated));
-  });
-  app.post('/api/admin/users/reset/:id', async (c) => {
-    const id = c.req.param('id');
-    const userEntity = new CTFUserEntity(c.env, id);
-    if (!await userEntity.exists()) return notFound(c, "User not found");
-    const updated = await userEntity.mutate(s => ({ ...s, score: 0, solvedChallenges: [] }));
     return ok(c, stripSensitive(updated));
   });
   app.delete('/api/admin/users/:id', async (c) => {
@@ -152,11 +156,12 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
   });
   app.get('/api/admin/challenges', async (c) => {
     const { items } = await ChallengeEntity.list(c.env);
+    // Admins CAN see flags in the database view
     return ok(c, items);
   });
   app.post('/api/admin/challenges', async (c) => {
     const data = await c.req.json() as Partial<Challenge>;
-    if (!data.title || !data.flag) return bad(c, "Title and flag required");
+    if (!data.title || !data.flag) return bad(c, "Mission title and flag key required.");
     const challenge = await ChallengeEntity.create(c.env, {
       id: crypto.randomUUID(),
       title: data.title,
@@ -172,7 +177,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const id = c.req.param('id');
     const data = await c.req.json() as Partial<Challenge>;
     const entity = new ChallengeEntity(c.env, id);
-    if (!await entity.exists()) return notFound(c, "Challenge not found");
+    if (!await entity.exists()) return notFound(c, "Mission intel not found.");
     const updated = await entity.mutate(s => ({ ...s, ...data, id: s.id }));
     return ok(c, updated);
   });
