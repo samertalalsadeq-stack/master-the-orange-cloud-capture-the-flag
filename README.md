@@ -1,6 +1,6 @@
 # Cloudflare Workers Chat Application Template
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/samertalalsadeq-stack/master-the-orange-cloud-capture-the-flag)
 
 A production-ready full-stack chat application template built on Cloudflare Workers. This template provides a modern React frontend with Shadcn UI components, a type-safe TypeScript backend powered by Hono, and persistent data storage using Durable Objects for users, chats, and messages. Perfect for building scalable, real-time chat applications with zero server management.
 
@@ -120,7 +120,7 @@ bun run deploy
 
 Assets are automatically served as a SPA via Cloudflare Workers Assets.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/samertalalsadeq-stack/master-the-orange-cloud-capture-the-flag)
 
 **Pro Tip**: Use `wrangler tail` for real-time logs and `wrangler dev --remote` for remote development.
 
