@@ -66,7 +66,7 @@ export function AdminUsersPage() {
             </h1>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
-            <Button 
+            <Button
               variant={filterPending ? "default" : "outline"}
               onClick={() => setFilterPending(!filterPending)}
               className={cn("h-12 font-mono text-xs uppercase", filterPending && "bg-primary text-white border-primary")}
@@ -121,8 +121,8 @@ export function AdminUsersPage() {
                 <TableCell className="text-right px-6 font-mono font-bold text-primary">{u.score}</TableCell>
                 <TableCell className="text-right px-6 space-x-1">
                   {!u.isApproved && !u.isAdmin && (
-                    <Button 
-                      variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10" 
+                    <Button
+                      variant="ghost" size="icon" className="text-green-500 hover:bg-green-500/10"
                       onClick={() => updateMutation.mutate({ id: u.id, isApproved: true })}
                       title="Approve Operative"
                     >

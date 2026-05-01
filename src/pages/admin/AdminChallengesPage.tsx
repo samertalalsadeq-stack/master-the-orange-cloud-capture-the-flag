@@ -156,12 +156,12 @@ export function AdminChallengesPage() {
         </div>
       </Card>
       <Dialog open={!!editingChallenge} onOpenChange={(open) => !open && setEditingChallenge(null)}>
-        <DialogContent className="bg-card border-white/10 text-white max-w-2xl overflow-y-auto max-h-[90vh]">
+        <DialogContent className="bg-card border-white/10 text-white max-w-2xl overflow-y-auto max-h-[90vh]" aria-describedby="mission-desc">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display uppercase italic text-primary">
               {editingChallenge?.id ? 'Edit Mission Intel' : 'Initialize New Mission'}
             </DialogTitle>
-            <DialogDescription className="text-white/40">
+            <DialogDescription id="mission-desc" className="text-white/40">
               Configure challenge parameters for the arena.
             </DialogDescription>
           </DialogHeader>
