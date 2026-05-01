@@ -41,8 +41,8 @@ export function AppLayout({ children, container = false, className, contentClass
           <div className="flex items-center justify-center gap-2 text-white/40 font-mono text-xs uppercase tracking-widest p-4 border border-white/5 rounded-lg">
             <Loader2 className="size-3 animate-spin" /> Verifying Intel...
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => { logout(); navigate('/'); }}
             className="border-white/10 hover:bg-destructive/10 hover:text-destructive gap-2 h-12"
           >
@@ -55,21 +55,23 @@ export function AppLayout({ children, container = false, className, contentClass
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
-      <SidebarInset className={cn("bg-black min-h-screen", className)}>
-        <div className="fixed left-4 bottom-4 md:absolute md:left-6 md:top-8 z-40">
+      <SidebarInset className={cn("bg-black min-h-screen relative flex flex-col", className)}>
+        {/* Sidebar Trigger positioned to avoid collision with content */}
+        <div className="fixed left-4 top-4 md:left-6 md:top-6 z-50">
           <SidebarTrigger className="bg-primary/10 text-primary border border-primary/20 shadow-lg hover:bg-primary/20 transition-all rounded-full p-3 size-12" />
         </div>
-        {container ? (
-          <div className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16", contentClassName)}>
-            <div className="relative pt-12 md:pt-4">
+        {/* Main Content Area with sufficient top padding to clear the trigger and headers */}
+        <main className="flex-1 w-full">
+          {container ? (
+            <div className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-24", contentClassName)}>
               {children}
             </div>
-          </div>
-        ) : (
-          <div className="relative pt-16 md:pt-4">
-            {children}
-          </div>
-        )}
+          ) : (
+            <div className={cn("pt-20 md:pt-24", contentClassName)}>
+              {children}
+            </div>
+          )}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

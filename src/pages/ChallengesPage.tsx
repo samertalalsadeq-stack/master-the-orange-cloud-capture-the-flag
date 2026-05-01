@@ -167,7 +167,7 @@ export function ChallengesPage() {
         </AnimatePresence>
       </div>
       <Dialog open={!!selectedChallenge} onOpenChange={(open) => !open && setSelectedChallenge(null)}>
-        <DialogContent className="bg-card border-white/10 text-white max-w-xl">
+        <DialogContent className="bg-card border-white/10 text-white max-w-xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
                <Badge variant="outline" className="text-primary border-primary/20 flex items-center gap-1">
@@ -177,7 +177,7 @@ export function ChallengesPage() {
                <span className="text-white/20 text-xs font-mono">CODE: {selectedChallenge?.id}</span>
             </div>
             <DialogTitle className="text-3xl font-display uppercase italic tracking-tighter">{selectedChallenge?.title}</DialogTitle>
-            <DialogDescription className="text-white/80 text-lg mt-4 leading-loose font-sans font-medium">
+            <DialogDescription className="text-white/80 text-lg mt-4 leading-relaxed font-sans font-medium">
               {selectedChallenge?.description}
             </DialogDescription>
           </DialogHeader>
