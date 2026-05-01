@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Unlock, Trophy, Shield, Zap, Globe, Lock } from 'lucide-react';
+import { CheckCircle2, Unlock, Trophy, Shield, Zap, Globe, Lock, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -10,30 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { toast, Toaster } from 'sonner';
 import confetti from 'canvas-confetti';
-import type { Challenge, CTFUser, SubmissionResponse, ChallengeCategory } from '@shared/types';
+import type { Challenge, SubmissionResponse, ChallengeCategory } from '@shared/types';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/hooks/use-user';
 export function ChallengesPage() {
   const queryClient = useQueryClient();
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [flag, setFlag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Derived from localStorage to ensure reactive updates after mutations
-  const getStoredUser = (): CTFUser | null => {
-    try {
-      const stored = localStorage.getItem('ctf_user');
-      if (!stored) return null;
-      const parsed = JSON.parse(stored) as CTFUser;
-      return {
-        ...parsed,
-        solvedChallenges: parsed.solvedChallenges ?? [],
-        score: parsed.score ?? 0
-      };
-    } catch (e) {
-      console.error("Failed to parse user session", e);
-      return null;
-    }
-  };
-  const currentUser = getStoredUser();
+  const { user: currentUser, updateUser } = useUser();
   const { data: challenges, isLoading } = useQuery<Challenge[]>({
     queryKey: ['challenges'],
     queryFn: () => api<Challenge[]>('/api/challenges'),
@@ -55,12 +40,11 @@ export function ChallengesPage() {
           colors: ['#F38020', '#FFFFFF', '#1E1E1E']
         });
         toast.success(data.message);
-        const updatedUser: CTFUser = {
+        updateUser({
           ...currentUser,
           score: data.newScore ?? currentUser.score,
           solvedChallenges: [...new Set([...currentUser.solvedChallenges, selectedChallenge.id])]
-        };
-        localStorage.setItem('ctf_user', JSON.stringify(updatedUser));
+        });
         queryClient.invalidateQueries({ queryKey: ['challenges'] });
         setSelectedChallenge(null);
         setFlag('');
@@ -85,7 +69,12 @@ export function ChallengesPage() {
       default: return <Lock className="size-3" />;
     }
   };
-  if (isLoading) return <div className="flex items-center justify-center h-96 text-primary font-mono animate-pulse">SCANNING SECTORS...</div>;
+  if (isLoading) return (
+    <div className="flex flex-col items-center justify-center h-96 gap-4">
+      <Loader2 className="size-12 text-primary animate-spin" />
+      <p className="text-primary font-mono animate-pulse uppercase tracking-widest">Scanning Sectors...</p>
+    </div>
+  );
   if (!currentUser) return <div className="flex items-center justify-center h-96 text-destructive font-mono">UNAUTHORIZED: SESSION EXPIRED</div>;
   return (
     <div className="space-y-8 animate-fade-in">
@@ -141,7 +130,7 @@ export function ChallengesPage() {
                     <Button
                       onClick={() => { setSelectedChallenge(ch); setFlag(''); }}
                       className={cn(
-                        "w-full font-bold transition-all",
+                        "w-full font-bold transition-all h-11",
                         isSolved
                           ? "bg-white/5 text-white/40 hover:bg-white/10 border border-white/5"
                           : "bg-primary text-white shadow-[0_0_15px_rgba(243,128,32,0.3)] hover:shadow-[0_0_25px_rgba(243,128,32,0.5)]"
@@ -178,17 +167,17 @@ export function ChallengesPage() {
                 onChange={(e) => setFlag(e.target.value)}
                 placeholder="CF{...}"
                 className="bg-white/5 border-white/10 h-14 text-lg font-mono tracking-widest text-primary focus:ring-primary placeholder:text-white/10"
-                disabled={isSubmitting || currentUser.solvedChallenges.includes(selectedChallenge?.id || '')}
+                disabled={isSubmitting || (selectedChallenge && currentUser.solvedChallenges.includes(selectedChallenge.id))}
                 autoFocus
               />
               <DialogFooter>
-                {!currentUser.solvedChallenges.includes(selectedChallenge?.id || '') ? (
+                {selectedChallenge && !currentUser.solvedChallenges.includes(selectedChallenge.id) ? (
                   <Button
                     type="submit"
                     className="w-full h-12 text-lg bg-primary hover:bg-primary/90 text-white font-bold"
                     disabled={isSubmitting || !flag.trim()}
                   >
-                    {isSubmitting ? "UPLOADING..." : "EXFILTRATE FLAG"}
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : "EXFILTRATE FLAG"}
                   </Button>
                 ) : (
                   <div className="w-full p-4 bg-green-500/10 rounded-lg text-green-500 border border-green-500/20 text-center font-bold font-mono tracking-widest">

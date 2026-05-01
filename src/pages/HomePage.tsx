@@ -1,49 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Terminal, ShieldAlert } from 'lucide-react';
+import { Sparkles, Terminal, ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast, Toaster } from 'sonner';
 import { api } from '@/lib/api-client';
+import { useUser } from '@/hooks/use-user';
 import type { CTFUser } from '@shared/types';
 export function HomePage() {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useUser();
   useEffect(() => {
-    const savedUser = localStorage.getItem('ctf_user');
-    if (savedUser) {
+    if (isAuthenticated) {
       navigate('/arena');
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) return;
+    const trimmed = username.trim();
+    if (!trimmed || trimmed.length < 3) {
+      toast.error('Alias must be at least 3 characters');
+      return;
+    }
     setIsLoading(true);
     try {
       const user = await api<CTFUser>('/api/auth', {
         method: 'POST',
-        body: JSON.stringify({ username })
+        body: JSON.stringify({ username: trimmed })
       });
-      localStorage.setItem('ctf_user', JSON.stringify(user));
+      login(user);
       toast.success(`Welcome to the Orange Cloud, ${user.username}`);
       navigate('/arena');
-    } catch (error) {
-      toast.error('Failed to enter the arena');
-      console.error(error);
+    } catch (error: any) {
+      toast.error(error.message || 'Access denied by Cloudflare firewall');
     } finally {
       setIsLoading(false);
     }
   };
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Effects */}
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(243,128,32,0.1),transparent_70%)] pointer-events-none" />
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
@@ -64,7 +67,7 @@ export function HomePage() {
             Cloudflare One Capture The Flag. Prove your Zero Trust expertise.
           </p>
         </div>
-        <Card className="glass border-white/10 shadow-2xl overflow-hidden">
+        <Card className="glass border-white/10 shadow-2xl overflow-hidden bg-card/80 backdrop-blur-sm">
           <div className="h-1 w-full bg-gradient-to-r from-transparent via-primary to-transparent" />
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
@@ -85,12 +88,16 @@ export function HomePage() {
                   autoFocus
                 />
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/80 text-white shadow-[0_0_20px_rgba(243,128,32,0.4)] transition-all"
                 disabled={isLoading || !username.trim()}
               >
-                {isLoading ? "Authenticating..." : "Enter The Arena"}
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="size-5 animate-spin" /> Authenticating...
+                  </span>
+                ) : "Enter The Arena"}
               </Button>
             </form>
             <div className="mt-6 flex items-center justify-center gap-2 text-white/20 text-xs font-mono uppercase tracking-widest">

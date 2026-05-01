@@ -1,30 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Database, Plus, Search, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Database, Plus, Search, Edit2, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast, Toaster } from 'sonner';
-import type { Challenge, ChallengeCategory, CTFUser } from '@shared/types';
+import type { Challenge, ChallengeCategory } from '@shared/types';
+import { useUser } from '@/hooks/use-user';
 export function AdminChallengesPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [editingChallenge, setEditingChallenge] = useState<Partial<Challenge> | null>(null);
-  const currentUser = useMemo(() => {
-    const stored = localStorage.getItem('ctf_user');
-    return stored ? (JSON.parse(stored) as CTFUser) : null;
-  }, []);
+  const { user: currentUser, isAdmin } = useUser();
   const { data: challenges, isLoading } = useQuery<Challenge[]>({
     queryKey: ['admin-challenges'],
     queryFn: () => api<Challenge[]>('/api/admin/challenges', {
       headers: { 'X-User-ID': currentUser?.id || '' }
-    })
+    }),
+    enabled: !!currentUser?.id && isAdmin
   });
   const createMutation = useMutation({
     mutationFn: (data: Partial<Challenge>) => api('/api/admin/challenges', {
@@ -65,7 +64,8 @@ export function AdminChallengesPage() {
     const matchesCat = categoryFilter === 'ALL' || ch.category === categoryFilter;
     return matchesSearch && matchesCat;
   });
-  if (isLoading) return <div className="text-primary font-mono animate-pulse">DECRYPTING MISSION DATABASE...</div>;
+  if (!isAdmin) return <div className="text-destructive font-mono">UNAUTHORIZED: RESTRICTED SECTOR</div>;
+  if (isLoading) return <div className="flex items-center gap-2 text-primary font-mono animate-pulse"><Loader2 className="animate-spin" /> DECRYPTING MISSION DATABASE...</div>;
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -144,11 +144,6 @@ export function AdminChallengesPage() {
       </Card>
       <Dialog open={!!editingChallenge} onOpenChange={(open) => !open && setEditingChallenge(null)}>
         <DialogContent className="bg-card border-white/10 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-display uppercase italic">
-              {editingChallenge?.id ? 'Edit Mission Data' : 'Initialize New Mission'}
-            </DialogTitle>
-          </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="col-span-2 space-y-2">
               <label className="text-xs font-bold text-white/40 uppercase">Mission Title</label>

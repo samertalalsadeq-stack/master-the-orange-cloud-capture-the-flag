@@ -1,10 +1,8 @@
-/*
-Wraps children in a sidebar layout. Protects the route by checking for an authenticated session.
-*/
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { useUser } from "@/hooks/use-user";
 type AppLayoutProps = {
   children: React.ReactNode;
   container?: boolean;
@@ -13,12 +11,13 @@ type AppLayoutProps = {
 };
 export function AppLayout({ children, container = false, className, contentClassName }: AppLayoutProps): JSX.Element {
   const navigate = useNavigate();
+  const { isAuthenticated } = useUser();
   useEffect(() => {
-    const savedUser = localStorage.getItem('ctf_user');
-    if (!savedUser) {
+    // Session guard: If cleared in another tab, redirect immediately
+    if (!isAuthenticated) {
       navigate('/');
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
@@ -27,7 +26,9 @@ export function AppLayout({ children, container = false, className, contentClass
           <SidebarTrigger />
         </div>
         {container ? (
-          <div className={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12" + (contentClassName ? ` ${contentClassName}` : "")}>{children}</div>
+          <div className={"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12" + (contentClassName ? ` ${contentClassName}` : "")}>
+            {children}
+          </div>
         ) : (
           children
         )}

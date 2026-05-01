@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Swords, Trophy, Shield, Home, LogOut, Users, Database } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -13,16 +13,13 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import type { CTFUser } from "@shared/types";
+import { useUser } from "@/hooks/use-user";
 export function AppSidebar(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = useMemo(() => {
-    const stored = localStorage.getItem('ctf_user');
-    return stored ? JSON.parse(stored) as CTFUser : null;
-  }, []);
+  const { user, isAdmin, logout } = useUser();
   const handleLogout = () => {
-    localStorage.removeItem('ctf_user');
+    logout();
     navigate('/');
   };
   const navItems = [
@@ -67,7 +64,7 @@ export function AppSidebar(): JSX.Element {
             ))}
           </SidebarMenu>
         </SidebarGroup>
-        {user?.isAdmin && (
+        {isAdmin && (
           <SidebarGroup className="mt-4">
             <SidebarGroupLabel className="text-white/40 px-2 text-xs uppercase tracking-widest font-bold">Command Center</SidebarGroupLabel>
             <SidebarMenu className="mt-2 space-y-1">
@@ -95,6 +92,10 @@ export function AppSidebar(): JSX.Element {
       <SidebarFooter className="p-4 border-t border-white/5">
         <SidebarMenu>
           <SidebarMenuItem>
+            <div className="px-3 py-2 mb-2">
+              <p className="text-[10px] text-white/30 uppercase tracking-tighter">Identified as</p>
+              <p className="text-sm font-mono text-primary truncate">{user?.username || 'Anonymous'}</p>
+            </div>
             <SidebarMenuButton
               onClick={handleLogout}
               className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"

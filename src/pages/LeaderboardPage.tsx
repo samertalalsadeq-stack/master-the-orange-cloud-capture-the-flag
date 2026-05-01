@@ -1,29 +1,28 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, Medal, Crown, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { Trophy, Medal, Crown, BarChart3, PieChart as PieChartIcon, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie
 } from 'recharts';
-import type { LeaderboardEntry, CTFUser } from '@shared/types';
+import type { LeaderboardEntry } from '@shared/types';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/hooks/use-user';
 export function LeaderboardPage() {
-  const getStoredUser = (): CTFUser | null => {
-    const stored = localStorage.getItem('ctf_user');
-    return stored ? (JSON.parse(stored) as CTFUser) : null;
-  };
-  const currentUser = getStoredUser();
-  const { data: leaderboard, isLoading } = useQuery<LeaderboardEntry[]>({
+  const { user: currentUser } = useUser();
+  const { data: leaderboard, isLoading: leadLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['leaderboard'],
     queryFn: () => api<LeaderboardEntry[]>('/api/leaderboard'),
     refetchInterval: 15000
   });
-  const { data: stats } = useQuery<{ categories: { name: string, value: number }[], topScores: { name: string, score: number }[] }>({
+  const { data: stats, isLoading: statsLoading } = useQuery<{ categories: { name: string, value: number }[], topScores: { name: string, score: number }[] }>({
     queryKey: ['leaderboard-stats'],
     queryFn: () => api<any>('/api/leaderboard/stats'),
     refetchInterval: 60000
@@ -48,67 +47,82 @@ export function LeaderboardPage() {
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="bg-card border-white/10 shadow-xl overflow-hidden">
-          <CardHeader className="flex flex-row items-center gap-3 pb-2 border-b border-white/5">
-            <BarChart3 className="size-5 text-primary" />
-            <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">Top Hackers</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px] pt-6">
-            {stats?.topScores ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.topScores}>
-                  <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis hide />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
-                    itemStyle={{ color: '#F38020' }}
-                    cursor={{ fill: 'rgba(243, 128, 32, 0.1)' }}
-                  />
-                  <Bar dataKey="score" fill="#F38020" radius={[4, 4, 0, 0]}>
-                    {stats.topScores.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <Card className="bg-card border-white/10 shadow-xl overflow-hidden h-full">
+            <CardHeader className="flex flex-row items-center gap-3 pb-2 border-b border-white/5">
+              <BarChart3 className="size-5 text-primary" />
+              <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">Top Hackers</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px] pt-6">
+              {statsLoading ? (
+                <div className="h-full flex flex-col gap-4">
+                  <div className="flex items-end gap-2 h-full px-4">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <Skeleton key={i} className="flex-1 bg-white/5" style={{ height: `${20 * i}%` }} />
                     ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-white/20 font-mono text-sm">LOADING ANALYTICS...</div>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-white/10 shadow-xl overflow-hidden">
-          <CardHeader className="flex flex-row items-center gap-3 pb-2 border-b border-white/5">
-            <PieChartIcon className="size-5 text-primary" />
-            <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">Mission Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px] pt-6">
-            {stats?.categories ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={stats.categories}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {stats.categories.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
-                    itemStyle={{ color: '#F38020' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-white/20 font-mono text-sm">COMPILING STATS...</div>
-            )}
-          </CardContent>
-        </Card>
+                  </div>
+                  <Skeleton className="h-4 w-full bg-white/5" />
+                </div>
+              ) : stats?.topScores ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.topScores}>
+                    <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis hide />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                      itemStyle={{ color: '#F38020' }}
+                      cursor={{ fill: 'rgba(243, 128, 32, 0.1)' }}
+                    />
+                    <Bar dataKey="score" fill="#F38020" radius={[4, 4, 0, 0]}>
+                      {stats.topScores.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-white/20 font-mono text-sm">NO DATA DETECTED</div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+          <Card className="bg-card border-white/10 shadow-xl overflow-hidden h-full">
+            <CardHeader className="flex flex-row items-center gap-3 pb-2 border-b border-white/5">
+              <PieChartIcon className="size-5 text-primary" />
+              <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">Mission Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px] pt-6 flex items-center justify-center">
+              {statsLoading ? (
+                <div className="relative size-48 rounded-full border-8 border-white/5 border-t-primary/20 animate-spin" />
+              ) : stats?.categories && stats.categories.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.categories}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {stats.categories.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={ORANGE_PALETTE[index % ORANGE_PALETTE.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                      itemStyle={{ color: '#F38020' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-white/20 font-mono text-sm">CALCULATING ANALYTICS...</div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
       <Card className="bg-card border-white/10 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
@@ -122,8 +136,15 @@ export function LeaderboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={4} className="text-center py-12 text-white/20 italic">Decrypting rank data...</TableCell></TableRow>
+              {leadLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="size-8 text-primary animate-spin" />
+                      <p className="text-white/20 italic font-mono">Decrypting rank data...</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : leaderboard?.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="text-center py-12 text-white/20 italic">No infiltrators detected.</TableCell></TableRow>
               ) : (

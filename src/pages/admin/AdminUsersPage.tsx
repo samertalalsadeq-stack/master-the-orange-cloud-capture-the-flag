@@ -11,15 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { toast, Toaster } from 'sonner';
 import type { CTFUser } from '@shared/types';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/hooks/use-user';
 export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<CTFUser | null>(null);
-  const getStoredUser = (): CTFUser | null => {
-    const stored = localStorage.getItem('ctf_user');
-    return stored ? (JSON.parse(stored) as CTFUser) : null;
-  };
-  const currentUser = getStoredUser();
+  const { user: currentUser, updateUser } = useUser();
   const { data: users, isLoading } = useQuery<CTFUser[]>({
     queryKey: ['admin-users'],
     queryFn: () => api<CTFUser[]>('/api/admin/users', {
@@ -47,17 +44,16 @@ export function AdminUsersPage() {
     }
   });
   const updateMutation = useMutation({
-    mutationFn: (user: CTFUser) => api(`/api/admin/users/${user.id}`, {
+    mutationFn: (user: CTFUser) => api<CTFUser>(`/api/admin/users/${user.id}`, {
       method: 'PUT',
       headers: { 'X-User-ID': currentUser?.id || '', 'Content-Type': 'application/json' },
       body: JSON.stringify(user)
     }),
-    onSuccess: (updated) => {
+    onSuccess: (updated: CTFUser) => {
       toast.success("Operative data synchronized");
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      // If we updated ourselves, update local session too
       if (currentUser && updated.id === currentUser.id) {
-        localStorage.setItem('ctf_user', JSON.stringify(updated));
+        updateUser(updated);
       }
       setEditingUser(null);
     }
@@ -106,8 +102,8 @@ export function AdminUsersPage() {
                       u.isAdmin ? "bg-primary animate-pulse shadow-[0_0_8px_rgba(243,128,32,0.8)]" : "bg-green-500/50"
                     )} />
                     <span className="font-bold text-white text-lg">{u.username}</span>
-                    {u.isAdmin && <Badge className="bg-primary/10 text-primary border-primary/20">ADMIN</Badge>}
-                  </div>
+                    {u.isAdmin && <Badge className="bg-primary/10 text-primary border-primary/20 ml-2">ADMIN</Badge>}
+                  </div >
                 </TableCell>
                 <TableCell className="text-right px-6 font-mono font-bold text-primary">{u.score}</TableCell>
                 <TableCell className="text-right px-6 text-white/50">{u.solvedChallenges.length}</TableCell>
