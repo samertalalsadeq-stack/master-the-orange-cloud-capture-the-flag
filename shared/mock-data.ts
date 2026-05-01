@@ -3,17 +3,23 @@ export const MOCK_USERS: CTFUser[] = [
   {
     id: 'admin-id',
     username: 'orange_admin',
+    email: 'admin@cloudflare.com',
     score: 0,
     solvedChallenges: [],
     isAdmin: true,
+    isApproved: true,
+    passwordHash: '00000000000000000000000000000000:mock_hash_admin',
     joinedAt: Date.now()
   },
   {
     id: 'player-1',
     username: 'flare_runner',
+    email: 'flare_runner@example.com',
     score: 500,
     solvedChallenges: ['ch1'],
     isAdmin: false,
+    isApproved: true,
+    passwordHash: '00000000000000000000000000000000:mock_hash_player',
     joinedAt: Date.now() - 86400000
   }
 ];

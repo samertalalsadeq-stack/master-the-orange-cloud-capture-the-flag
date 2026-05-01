@@ -1,13 +1,6 @@
 import { IndexedEntity, Env } from "./core-utils";
 import type { CTFUser, Challenge } from "@shared/types";
 import { MOCK_CHALLENGES, MOCK_USERS } from "@shared/mock-data";
-// Corrected mock users to match new CTFUser interface requirements
-const INITIAL_USERS: CTFUser[] = MOCK_USERS.map(u => ({
-  ...u,
-  email: u.isAdmin ? 'admin@cloudflare.com' : `${u.username}@example.com`,
-  isApproved: u.isAdmin || u.score > 0,
-  passwordHash: "PBKDF2:MOCK_HASH" // Simplified for seed
-}));
 export class CTFUserEntity extends IndexedEntity<CTFUser> {
   static readonly entityName = "ctf-user";
   static readonly indexName = "ctf-users";
@@ -22,7 +15,7 @@ export class CTFUserEntity extends IndexedEntity<CTFUser> {
     passwordHash: "",
     joinedAt: 0
   };
-  static seedData = INITIAL_USERS;
+  static seedData = MOCK_USERS;
   async submitFlag(env: Env, challengeId: string, flag: string): Promise<{ correct: boolean; message: string }> {
     const user = await this.getState();
     if (!user.isApproved && !user.isAdmin) {
