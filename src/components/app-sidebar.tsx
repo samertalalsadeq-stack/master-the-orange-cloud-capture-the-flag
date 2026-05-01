@@ -1,5 +1,5 @@
-import React from "react";
-import { Swords, Trophy, Shield, LogOut, Users, Database, AlertCircle } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Swords, Trophy, Shield, LogOut, Users, Database, AlertCircle, Clock } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -21,6 +21,34 @@ export function AppSidebar(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAdmin, logout } = useUser();
+  const [sessionTime, setSessionTime] = useState<string>("0m 0s");
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+  };
+  const updateTimer = useCallback(() => {
+    const startTime = localStorage.getItem('ctf_session_start');
+    if (startTime) {
+      const elapsed = Date.now() - parseInt(startTime, 10);
+      setSessionTime(formatTime(elapsed));
+    } else {
+      setSessionTime("0m 0s");
+    }
+  }, []);
+  useEffect(() => {
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    const handleSessionChange = () => {
+      updateTimer();
+    };
+    window.addEventListener('user-session-changed', handleSessionChange);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('user-session-changed', handleSessionChange);
+    };
+  }, [updateTimer]);
   const { data: users } = useQuery<CTFUser[]>({
     queryKey: ['admin-users-summary'],
     queryFn: () => api<CTFUser[]>('/api/admin/users', { headers: { 'X-User-ID': user?.id || '' } }),
@@ -34,11 +62,11 @@ export function AppSidebar(): JSX.Element {
     { label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
   ];
   const adminItems = [
-    { 
-      label: "Operatives", 
-      icon: Users, 
+    {
+      label: "Operatives",
+      icon: Users,
       path: "/admin/users",
-      badge: pendingCount > 0 ? pendingCount : null 
+      badge: pendingCount > 0 ? pendingCount : null
     },
     { label: "Mission Database", icon: Database, path: "/admin/challenges" },
   ];
@@ -49,7 +77,7 @@ export function AppSidebar(): JSX.Element {
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(243,128,32,0.4)]">
             <Shield className="h-5 w-5 text-white" />
           </div>
-          <span className="font-display font-bold text-lg tracking-tight">Orange CTF</span>
+          <span className="font-display font-bold text-lg tracking-tight text-white">Orange CTF</span>
         </div>
       </SidebarHeader>
       <SidebarContent className="px-4">
@@ -104,8 +132,13 @@ export function AppSidebar(): JSX.Element {
       <SidebarFooter className="p-4 border-t border-white/5">
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="px-3 py-2 mb-2">
-              <p className="text-[10px] text-white/30 uppercase tracking-tighter">Identity Signature</p>
+            <div className="px-3 py-2 mb-2 flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-white/30 uppercase tracking-tighter">Identity Signature</p>
+                <div className="flex items-center gap-1 text-[10px] font-mono text-primary animate-pulse-subtle">
+                  <Clock className="size-2" /> <span>{sessionTime}</span>
+                </div>
+              </div>
               <p className="text-sm font-mono text-primary truncate orange-glow">{user?.username}</p>
             </div>
             <SidebarMenuButton onClick={handleLogout} className="w-full text-destructive hover:bg-destructive/10">

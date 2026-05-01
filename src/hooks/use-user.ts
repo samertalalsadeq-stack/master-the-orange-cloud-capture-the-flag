@@ -12,16 +12,22 @@ export function useUser() {
   });
   const login = useCallback((userData: CTFUser) => {
     localStorage.setItem('ctf_user', JSON.stringify(userData));
+    localStorage.setItem('ctf_session_start', Date.now().toString());
     setUser(userData);
     window.dispatchEvent(new Event('user-session-changed'));
   }, []);
   const logout = useCallback(() => {
     localStorage.removeItem('ctf_user');
+    localStorage.removeItem('ctf_session_start');
     setUser(null);
     window.dispatchEvent(new Event('user-session-changed'));
   }, []);
   const updateUser = useCallback((userData: CTFUser) => {
     localStorage.setItem('ctf_user', JSON.stringify(userData));
+    // Preserve existing session start if it exists
+    if (!localStorage.getItem('ctf_session_start')) {
+      localStorage.setItem('ctf_session_start', Date.now().toString());
+    }
     setUser(userData);
     window.dispatchEvent(new Event('user-session-changed'));
   }, []);
@@ -46,12 +52,9 @@ export function useUser() {
   const isAdmin = useMemo(() => user?.isAdmin ?? false, [user]);
   const isApproved = useMemo(() => user?.isApproved ?? false, [user]);
   const isPending = useMemo(() => !!user && !user.isApproved && !user.isAdmin, [user]);
-
   const userId = useMemo(() => user?.id ?? '', [user]);
-
   useEffect(() => {
     if (!userId) return;
-
     let canceled = false;
     const interval = setInterval(async () => {
       try {
@@ -65,7 +68,6 @@ export function useUser() {
         // Silent catch
       }
     }, 20000);
-
     return () => {
       canceled = true;
       clearInterval(interval);
