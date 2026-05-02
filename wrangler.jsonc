@@ -4,7 +4,8 @@
  */
  {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "master-the-orange-cl-grjbbratjy_vptguy4zit",
+	"name": "// wrangler.jsonc
+"name": "master-the-orange-cloud-capture-the-flag",
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-04-24",
 	"assets": {
