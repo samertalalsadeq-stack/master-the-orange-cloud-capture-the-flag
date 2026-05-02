@@ -4,9 +4,16 @@
  */
  {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "// wrangler.jsonc
 	"name": "master-the-orange-cloud-capture-the-flag",
+	"main": "worker/index.ts",
 	"compatibility_date": "2025-04-24",
+	"assets": {
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*", "!/api/docs/*"]
+	},
+	"observability": {
+		"enabled": true
+	},
     "durable_objects": {
       "bindings": [
         {
@@ -18,7 +25,8 @@
     "migrations": [
       {
         "tag": "v1",
-        "new_classes": ["GlobalDurableObject"]
+        "new_sqlite_classes": [
+          "GlobalDurableObject"
         ]
       }
     ]
